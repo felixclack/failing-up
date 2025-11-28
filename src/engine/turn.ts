@@ -11,10 +11,16 @@ import {
   StatDeltas,
   GameOverReason,
   Song,
+  GameEvent,
 } from './types';
 import { applyStatDeltas, weekToYear } from './state';
 import { executeAction, ACTIONS } from './actions';
 import { createRandom } from './random';
+import {
+  getEligibleEvents,
+  selectRandomEvent,
+  shouldEventTrigger,
+} from './events';
 
 // =============================================================================
 // Constants
@@ -287,7 +293,107 @@ export function processTurn(
   return {
     newState,
     actionResult: actionResult.message,
-    triggeredEvents: [], // TODO: Milestone 2
+    triggeredEvents: [],
+    isGameOver: newState.isGameOver,
+    gameOverReason: newState.gameOverReason,
+  };
+}
+
+/**
+ * Process a turn with event triggering
+ * Events are selected but not resolved - the UI handles choice selection
+ */
+export function processTurnWithEvents(
+  state: GameState,
+  actionId: ActionId,
+  allEvents: GameEvent[]
+): TurnResult {
+  // Create RNG for this turn
+  const rng = createRandom(state.seed + state.week);
+
+  let newState = { ...state };
+
+  // 1. Apply weekly costs
+  newState = applyWeeklyCosts(newState);
+
+  // 2. Execute chosen action
+  const actionResult = executeAction(actionId, newState, rng);
+
+  // 3. Apply action results
+  if (actionResult.success) {
+    newState = {
+      ...newState,
+      player: applyStatDeltas(newState.player, actionResult.statChanges),
+    };
+
+    // If action produced a song, add it
+    if (actionResult.producedSongId) {
+      const newSong: Song = {
+        id: actionResult.producedSongId,
+        title: actionResult.message.match(/"([^"]+)"/)?.[1] || 'Untitled',
+        quality: 50,
+        style: 'rock' as any,
+        hitPotential: 30,
+        writtenByPlayer: true,
+        weekWritten: newState.week,
+      };
+      newState = {
+        ...newState,
+        songs: [...newState.songs, newSong],
+      };
+    }
+  }
+
+  // 4. Check for and select events
+  const triggeredEvents: GameEvent[] = [];
+
+  if (shouldEventTrigger(newState, rng)) {
+    const eligibleEvents = getEligibleEvents(allEvents, newState, actionId);
+    const selectedEvent = selectRandomEvent(eligibleEvents, rng);
+
+    if (selectedEvent) {
+      triggeredEvents.push(selectedEvent);
+    }
+  }
+
+  // 5. Apply end-of-week stat updates
+  newState = applyEndOfWeekUpdates(newState);
+
+  // 6. Advance week counter
+  newState = {
+    ...newState,
+    week: newState.week + 1,
+    year: weekToYear(newState.week + 1),
+  };
+
+  // 7. Check for game over
+  const gameOverReason = checkGameOver(newState);
+  if (gameOverReason) {
+    newState = {
+      ...newState,
+      isGameOver: true,
+      gameOverReason,
+    };
+  }
+
+  // Record in week log
+  const weekLog: WeekLog = {
+    week: state.week,
+    action: actionId,
+    actionResult: actionResult.message,
+    events: [], // Will be updated when event is resolved
+    statChanges: actionResult.statChanges,
+  };
+
+  newState = {
+    ...newState,
+    weekLogs: [...newState.weekLogs, weekLog],
+  };
+
+  return {
+    newState,
+    actionResult: actionResult.message,
+    triggeredEvents,
     isGameOver: newState.isGameOver,
     gameOverReason: newState.gameOverReason,
   };

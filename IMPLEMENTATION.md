@@ -68,17 +68,19 @@ src/
 
 ---
 
-### Milestone 2: Events System
+### Milestone 2: Events System - COMPLETE
 **Goal**: Random events trigger based on game state, adding narrative variety.
 
-- [ ] Design event data structure and trigger conditions
-- [ ] Implement event selection algorithm (weighted random by eligibility)
-- [ ] Create 10-15 starter events (band conflicts, money issues, minor health)
-- [ ] Build event modal UI with choices
-- [ ] Apply event outcomes to game state
-- [ ] Write tests for event triggering and outcome application
+- [x] Design event data structure and trigger conditions
+- [x] Implement event selection algorithm (weighted random by eligibility)
+- [x] Create 15 starter events (band conflicts, money, health, gigs, scene)
+- [x] Build event modal UI with choices and outcome display
+- [x] Apply event outcomes to game state
+- [x] Write tests for event triggering and outcome application (20 new tests)
 
 **Deliverable**: Events pop up after actions with meaningful choices that affect the game.
+
+**Status**: COMPLETE - 15 events across 5 categories, modal UI with hints, 76 total tests passing.
 
 ---
 
@@ -181,6 +183,24 @@ src/
 - Wrote 56 unit tests covering state, actions, and turn resolution
 - All tests passing, build succeeds
 
+### Session 2 (continued) - Events System (Milestone 2 Complete)
+- Created event engine (`src/engine/events.ts`):
+  - Trigger condition checking (stats, flags, band conditions)
+  - Weighted random event selection
+  - Event eligibility filtering
+  - Event choice application to game state
+- Created 15 starter events in 5 categories (`src/data/events.ts`):
+  - Band conflicts (3): rehearsal fights, lateness, creative differences
+  - Money/career (4): gear stolen, rent due, promoter offers, fan donations
+  - Health/addiction (4): hangovers, dealer encounters, injuries, burnout warnings
+  - Gig events (3): hecklers, sound issues, label scouts
+  - Scene events (3): rival bands, interview requests, groupie drama
+- Built event UI components:
+  - EventModal with choice hints (cost indicators, risk warnings)
+  - EventOutcome showing stat changes after choice
+- Integrated events into turn resolution
+- Wrote 20 new event tests (76 total tests passing)
+
 ---
 
 ## Testing Strategy
@@ -215,15 +235,17 @@ npm run test:coverage # Generate coverage report
 
 ## Current Status
 
-**Completed Milestone**: 1 - Core Game Loop (DONE)
-**Active Milestone**: 2 - Events System
-**Next Task**: Design event data structure and implement event selection algorithm
+**Completed Milestones**: 1 - Core Game Loop, 2 - Events System
+**Active Milestone**: 3 - Full Action Set & Economy
+**Next Task**: Implement label deal system and remaining action special logic
 
 ### What's Playable Now
 - Start a new game with your stage name
 - Choose weekly actions from 10 options
 - Watch stats change over time
 - Experience hype decay, addiction effects, burnout
+- **Random events trigger** with meaningful choices and consequences
+- Events have visual hints showing costs and risks
 - Game ends when you die, go broke, or reach 10 years
 - See ending screen with career summary
 

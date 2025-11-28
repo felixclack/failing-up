@@ -4,3 +4,4 @@ export { WeeklyLog } from './WeeklyLog';
 export { EndingScreen } from './EndingScreen';
 export { StartScreen } from './StartScreen';
 export { GameScreen } from './GameScreen';
+export { EventModal, EventOutcome } from './EventModal';

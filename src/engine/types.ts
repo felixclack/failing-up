@@ -177,6 +177,11 @@ export interface EventTriggerConditions {
   minBurnout?: number;
   minMoney?: number;
   maxMoney?: number;
+  minHype?: number;
+  maxHype?: number;
+  minImage?: number;
+  maxImage?: number;
+  minSkill?: number;
   // Flag requirements
   onTour?: boolean;
   inStudio?: boolean;
