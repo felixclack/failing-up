@@ -115,17 +115,19 @@ src/
 
 ---
 
-### Milestone 5: Arcs & Narrative Depth
+### Milestone 5: Arcs & Narrative Depth - COMPLETE
 **Goal**: Multi-event storylines that create emergent narratives.
 
-- [ ] Implement arc system (entry conditions, stage progression)
-- [ ] Create Addiction Arc (4 stages)
-- [ ] Create Label Deal Arc (offer through success/dropped)
-- [ ] Create Band Breakup Arc
-- [ ] Add arc-specific events and callbacks
-- [ ] Write tests for arc progression
+- [x] Implement arc system (entry conditions, stage progression)
+- [x] Create Addiction Arc (4 stages)
+- [x] Create Label Deal Arc (offer through success/dropped)
+- [x] Create Band Breakup Arc
+- [x] Add arc-specific events and callbacks
+- [x] Write tests for arc progression
 
 **Deliverable**: Connected storylines that develop over multiple weeks.
+
+**Status**: COMPLETE - Arc engine with 3 arcs (22 arc events), 44 new tests (185 total).
 
 ---
 
@@ -242,6 +244,23 @@ src/
 - Integrated band display into GameScreen
 - Wrote 43 new band tests (141 total tests passing)
 
+### Session 4 - Arcs System (Milestone 5 Complete)
+- Created arc engine (`src/engine/arcs.ts`):
+  - Arc entry condition checking
+  - Arc stage progression and advancement
+  - Arc event selection (priority over random events)
+  - Arc completion and abortion
+  - Helper functions for arc state queries
+- Created 3 arcs with 22 total events (`src/data/arcs.ts`):
+  - **Addiction Arc** (4 stages): Functional partying → missed rehearsals → missed gigs → OD scare/rehab
+  - **Label Deal Arc** (4 stages): Interest → showcase → contract → recording pressure
+  - **Band Breakup Arc** (3 stages): Tension → ultimatums → final collapse
+- Integrated arcs into turn resolution:
+  - Check and activate new arcs each turn
+  - Arc events have priority over random events
+  - Check and advance arcs based on conditions
+- Wrote 44 new arc tests (185 total tests passing)
+
 ---
 
 ## Testing Strategy
@@ -276,9 +295,9 @@ npm run test:coverage # Generate coverage report
 
 ## Current Status
 
-**Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy, 4 - Bandmates
-**Active Milestone**: 5 - Arcs & Narrative Depth
-**Next Task**: Implement arc system with entry conditions and stage progression
+**Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy, 4 - Bandmates, 5 - Arcs
+**Active Milestone**: 6 - Endings & Polish
+**Next Task**: Implement ending determination algorithm
 
 ### What's Playable Now
 - Start a new game with your stage name
@@ -291,6 +310,10 @@ npm run test:coverage # Generate coverage report
 - **Band members** with visible stats and personalities
 - Fire underperforming or troublesome bandmates
 - Band-specific events (fights, deaths, departures)
+- **Story arcs** that develop over multiple weeks:
+  - Addiction spiral with intervention and recovery choices
+  - Label deal negotiations and industry pressure
+  - Band breakup drama with ultimatums and lineup changes
 - Game ends when you die, go broke, or reach 10 years
 - See ending screen with career summary
 
@@ -308,6 +331,15 @@ npm run test:coverage # Generate coverage report
 - Weekly loyalty changes based on success factors
 - Fire capability with morale impact on remaining members
 - 11 band-specific events with dramatic choices
+
+### Arc System Ready
+- Arc entry based on game state conditions
+- Stage progression with advancement thresholds
+- Arc events have priority over random events
+- 3 core arcs with 22 total events:
+  - Addiction Arc: 4 stages from partying to OD scare
+  - Label Deal Arc: 4 stages from interest to pressure
+  - Band Breakup Arc: 3 stages from tension to collapse
 
 ---
 

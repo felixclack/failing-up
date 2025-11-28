@@ -6,6 +6,7 @@
 import { GameEvent } from '@/engine/types';
 import { labelEvents } from './labelEvents';
 import { bandEvents } from './bandEvents';
+import { ALL_ARC_EVENTS } from './arcs';
 
 // =============================================================================
 // Band Conflict Events
@@ -519,6 +520,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...sceneEvents,
   ...labelEvents,
   ...bandEvents,
+  ...ALL_ARC_EVENTS,
 ];
 
 // Export categories for filtering if needed

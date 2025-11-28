@@ -21,6 +21,13 @@ import {
   selectRandomEvent,
   shouldEventTrigger,
 } from './events';
+import {
+  checkAndActivateArcs,
+  checkAndAdvanceArcs,
+  getArcEvents,
+  selectArcEvent,
+} from './arcs';
+import { ALL_ARCS } from '@/data/arcs';
 
 // =============================================================================
 // Constants
@@ -344,10 +351,21 @@ export function processTurnWithEvents(
     }
   }
 
-  // 4. Check for and select events
+  // 4. Check and activate new arcs
+  newState = checkAndActivateArcs(newState, ALL_ARCS);
+
+  // 5. Check for and select events (arc events have priority)
   const triggeredEvents: GameEvent[] = [];
 
-  if (shouldEventTrigger(newState, rng)) {
+  // First, check for arc events
+  const arcEvents = getArcEvents(newState, allEvents);
+  const arcEvent = selectArcEvent(arcEvents, rng);
+
+  if (arcEvent) {
+    // Arc event takes priority
+    triggeredEvents.push(arcEvent);
+  } else if (shouldEventTrigger(newState, rng)) {
+    // No arc event, try random events
     const eligibleEvents = getEligibleEvents(allEvents, newState, actionId);
     const selectedEvent = selectRandomEvent(eligibleEvents, rng);
 
@@ -356,17 +374,20 @@ export function processTurnWithEvents(
     }
   }
 
-  // 5. Apply end-of-week stat updates
+  // 6. Check and advance arcs based on conditions
+  newState = checkAndAdvanceArcs(newState);
+
+  // 7. Apply end-of-week stat updates
   newState = applyEndOfWeekUpdates(newState);
 
-  // 6. Advance week counter
+  // 8. Advance week counter
   newState = {
     ...newState,
     week: newState.week + 1,
     year: weekToYear(newState.week + 1),
   };
 
-  // 7. Check for game over
+  // 9. Check for game over
   const gameOverReason = checkGameOver(newState);
   if (gameOverReason) {
     newState = {
@@ -376,7 +397,7 @@ export function processTurnWithEvents(
     };
   }
 
-  // Record in week log
+  // 10. Record in week log
   const weekLog: WeekLog = {
     week: state.week,
     action: actionId,
