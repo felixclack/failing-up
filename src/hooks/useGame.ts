@@ -25,6 +25,7 @@ export interface UseGameReturn {
   handleEventChoice: (choice: EventChoice) => void;
   dismissEventOutcome: () => void;
   restartGame: () => void;
+  newGame: () => void;
   handleFireBandmate: (bandmateId: string) => void;
 
   // Computed
@@ -115,6 +116,15 @@ export function useGame(): UseGameReturn {
     }
   }, [lastOptions]);
 
+  const newGame = useCallback(() => {
+    setGameState(null);
+    setLastTurnResult(null);
+    setLastOptions(null);
+    setPendingEvent(null);
+    setEventOutcome(null);
+    setPendingEventState(null);
+  }, []);
+
   const handleFireBandmate = useCallback((bandmateId: string) => {
     if (!gameState || gameState.isGameOver) return;
     if (pendingEvent) return; // Can't fire while event pending
@@ -144,6 +154,7 @@ export function useGame(): UseGameReturn {
     handleEventChoice,
     dismissEventOutcome,
     restartGame,
+    newGame,
     handleFireBandmate,
     availableActions,
     currentWeekLog,

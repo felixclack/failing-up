@@ -13,6 +13,7 @@ export default function Home() {
     startGame,
     takeAction,
     restartGame,
+    newGame,
     handleFireBandmate,
     availableActions,
     currentWeekLog,
@@ -38,7 +39,8 @@ export default function Home() {
     return (
       <EndingScreen
         gameState={gameState}
-        onRestart={restartGame}
+        onPlayAgain={restartGame}
+        onNewGame={newGame}
       />
     );
   }

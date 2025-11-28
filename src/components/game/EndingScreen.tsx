@@ -10,7 +10,8 @@ import {
 
 interface EndingScreenProps {
   gameState: GameState;
-  onRestart: () => void;
+  onPlayAgain: () => void;
+  onNewGame: () => void;
 }
 
 function StatSummary({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
@@ -38,7 +39,7 @@ function CallbackCard({ callback }: { callback: EndingCallback }) {
   );
 }
 
-export function EndingScreen({ gameState, onRestart }: EndingScreenProps) {
+export function EndingScreen({ gameState, onPlayAgain, onNewGame }: EndingScreenProps) {
   const { player, week, songs, albums, bandmates, labelDeals, completedArcIds } = gameState;
   const years = Math.floor(week / 52);
   const weeks = week % 52;
@@ -158,10 +159,16 @@ export function EndingScreen({ gameState, onRestart }: EndingScreenProps) {
         {/* Actions */}
         <div className="flex justify-center gap-4">
           <button
-            onClick={onRestart}
-            className="px-10 py-4 bg-red-600 hover:bg-red-500 text-white font-bold text-lg rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-red-900/30"
+            onClick={onPlayAgain}
+            className="px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg rounded-xl transition-all transform hover:scale-105"
           >
-            Start New Career
+            Play Again
+          </button>
+          <button
+            onClick={onNewGame}
+            className="px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-bold text-lg rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-red-900/30"
+          >
+            New Character
           </button>
         </div>
 
