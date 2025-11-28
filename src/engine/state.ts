@@ -11,6 +11,8 @@ import {
   StatDeltas,
   BandmateRole,
   Difficulty,
+  TalentLevel,
+  MusicStyle,
 } from './types';
 import { createRandom, generateSeed, RandomGenerator } from './random';
 import { getDifficultySettings, getWeeklyLivingCost } from './difficulty';
@@ -25,6 +27,97 @@ export const WEEKS_PER_YEAR = 52;
 
 export const STAT_MIN = 0;
 export const STAT_MAX = 100;
+
+// =============================================================================
+// Talent Level Definitions
+// =============================================================================
+
+export const TALENT_LEVELS: Record<TalentLevel, { value: number; name: string; description: string }> = {
+  struggling: {
+    value: 25,
+    name: 'Struggling',
+    description: 'Raw but unpolished. You\'ll need to work twice as hard.',
+  },
+  average: {
+    value: 40,
+    name: 'Average',
+    description: 'Solid foundation. Room to grow with practice.',
+  },
+  gifted: {
+    value: 60,
+    name: 'Gifted',
+    description: 'Natural ability. Songs come easier to you.',
+  },
+  prodigy: {
+    value: 80,
+    name: 'Prodigy',
+    description: 'Born for this. But talent alone won\'t save you.',
+  },
+};
+
+export function getTalentFromLevel(level: TalentLevel): number {
+  return TALENT_LEVELS[level].value;
+}
+
+export function getAvailableTalentLevels(): Array<{
+  id: TalentLevel;
+  name: string;
+  description: string;
+  value: number;
+}> {
+  return [
+    { id: 'struggling', ...TALENT_LEVELS.struggling },
+    { id: 'average', ...TALENT_LEVELS.average },
+    { id: 'gifted', ...TALENT_LEVELS.gifted },
+    { id: 'prodigy', ...TALENT_LEVELS.prodigy },
+  ];
+}
+
+// =============================================================================
+// Music Style Definitions
+// =============================================================================
+
+export const MUSIC_STYLES: Record<MusicStyle, { name: string; description: string }> = {
+  glam: {
+    name: 'Glam Rock',
+    description: 'Flashy, theatrical, image-focused.',
+  },
+  punk: {
+    name: 'Punk',
+    description: 'Raw, fast, anti-establishment.',
+  },
+  grunge: {
+    name: 'Grunge',
+    description: 'Heavy, angst-driven, authentic.',
+  },
+  alt: {
+    name: 'Alternative',
+    description: 'Experimental, eclectic, boundary-pushing.',
+  },
+  metal: {
+    name: 'Metal',
+    description: 'Heavy, technical, intense.',
+  },
+  indie: {
+    name: 'Indie',
+    description: 'DIY ethos, artistic credibility.',
+  },
+};
+
+export function getAvailableStyles(): Array<{
+  id: MusicStyle;
+  name: string;
+  description: string;
+}> {
+  return [
+    { id: 'glam', ...MUSIC_STYLES.glam },
+    { id: 'punk', ...MUSIC_STYLES.punk },
+    { id: 'grunge', ...MUSIC_STYLES.grunge },
+    { id: 'alt', ...MUSIC_STYLES.alt },
+    { id: 'metal', ...MUSIC_STYLES.metal },
+    { id: 'indie', ...MUSIC_STYLES.indie },
+  ];
+}
 
 // Starting stat ranges for character creation
 export const STARTING_STATS = {
@@ -150,6 +243,8 @@ export function createStartingBand(rng: RandomGenerator): Bandmate[] {
 export interface CreateGameOptions {
   playerName: string;
   playerTalent?: number;
+  talentLevel?: TalentLevel;
+  preferredStyle?: MusicStyle;
   seed?: number;
   difficulty?: Difficulty;
 }
@@ -162,10 +257,17 @@ export function createGameState(options: CreateGameOptions): GameState {
   const rng = createRandom(seed);
   const difficulty = options.difficulty ?? 'normal';
   const difficultySettings = getDifficultySettings(difficulty);
+  const preferredStyle = options.preferredStyle ?? 'punk';
+
+  // Determine talent: explicit value > talent level > random
+  let talent: number | undefined = options.playerTalent;
+  if (talent === undefined && options.talentLevel) {
+    talent = getTalentFromLevel(options.talentLevel);
+  }
 
   const player = createPlayer({
     name: options.playerName,
-    talent: options.playerTalent,
+    talent,
   }, rng, difficultySettings);
 
   const bandmates = createStartingBand(rng);
@@ -196,6 +298,8 @@ export function createGameState(options: CreateGameOptions): GameState {
 
     difficulty,
     difficultySettings,
+
+    preferredStyle,
   };
 }
 

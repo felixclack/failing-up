@@ -41,6 +41,9 @@ export type GameOverReason =
 
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'brutal';
 
+// Talent level presets for character creation
+export type TalentLevel = 'struggling' | 'average' | 'gifted' | 'prodigy';
+
 // =============================================================================
 // Difficulty Settings
 // =============================================================================
@@ -322,6 +325,9 @@ export interface GameState {
   // Difficulty settings
   difficulty: Difficulty;
   difficultySettings: DifficultySettings;
+
+  // Character creation choices
+  preferredStyle: MusicStyle;
 }
 
 // =============================================================================

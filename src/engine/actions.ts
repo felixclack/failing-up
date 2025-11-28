@@ -236,15 +236,23 @@ function generateSongTitle(rng: RandomGenerator): string {
 
 const MUSIC_STYLES: MusicStyle[] = ['glam', 'punk', 'grunge', 'alt', 'metal', 'indie'];
 
-function getRandomStyle(rng: RandomGenerator): MusicStyle {
+/**
+ * Get a song style, biased toward the player's preferred style
+ * 60% chance of preferred style, 40% chance of random
+ */
+function getSongStyle(preferredStyle: MusicStyle, rng: RandomGenerator): MusicStyle {
+  if (rng.next() < 0.6) {
+    return preferredStyle;
+  }
   return MUSIC_STYLES[rng.nextInt(0, MUSIC_STYLES.length - 1)];
 }
 
 /**
  * Execute the Write action - may produce a song
+ * Song style is biased toward player's preferred style
  */
 function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
-  const { player } = state;
+  const { player, preferredStyle } = state;
 
   // Base chance to write a song: 40% + skill bonus
   const writeChance = 0.4 + (player.skill / 200);
@@ -263,7 +271,7 @@ function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
       id: `song_${state.week}_${rng.nextInt(0, 9999)}`,
       title: generateSongTitle(rng),
       quality,
-      style: getRandomStyle(rng),
+      style: getSongStyle(preferredStyle, rng),
       hitPotential,
       writtenByPlayer: true,
       weekWritten: state.week,

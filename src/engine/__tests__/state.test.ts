@@ -7,6 +7,11 @@ import {
   weekInYear,
   STAT_MIN,
   STAT_MAX,
+  TALENT_LEVELS,
+  getTalentFromLevel,
+  getAvailableTalentLevels,
+  MUSIC_STYLES,
+  getAvailableStyles,
 } from '../state';
 import { createRandom } from '../random';
 
@@ -190,6 +195,117 @@ describe('state', () => {
       expect(weekInYear(52)).toBe(52);
       expect(weekInYear(53)).toBe(1);
       expect(weekInYear(104)).toBe(52);
+    });
+  });
+
+  describe('talent levels', () => {
+    it('has four talent levels defined', () => {
+      expect(TALENT_LEVELS.struggling).toBeDefined();
+      expect(TALENT_LEVELS.average).toBeDefined();
+      expect(TALENT_LEVELS.gifted).toBeDefined();
+      expect(TALENT_LEVELS.prodigy).toBeDefined();
+    });
+
+    it('talent levels have increasing values', () => {
+      expect(TALENT_LEVELS.struggling.value).toBeLessThan(TALENT_LEVELS.average.value);
+      expect(TALENT_LEVELS.average.value).toBeLessThan(TALENT_LEVELS.gifted.value);
+      expect(TALENT_LEVELS.gifted.value).toBeLessThan(TALENT_LEVELS.prodigy.value);
+    });
+
+    it('getTalentFromLevel returns correct values', () => {
+      expect(getTalentFromLevel('struggling')).toBe(25);
+      expect(getTalentFromLevel('average')).toBe(40);
+      expect(getTalentFromLevel('gifted')).toBe(60);
+      expect(getTalentFromLevel('prodigy')).toBe(80);
+    });
+
+    it('getAvailableTalentLevels returns all levels with details', () => {
+      const levels = getAvailableTalentLevels();
+      expect(levels).toHaveLength(4);
+      expect(levels.map(l => l.id)).toEqual(['struggling', 'average', 'gifted', 'prodigy']);
+      levels.forEach(level => {
+        expect(level.name).toBeDefined();
+        expect(level.description).toBeDefined();
+        expect(level.value).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  describe('music styles', () => {
+    it('has all six styles defined', () => {
+      expect(MUSIC_STYLES.glam).toBeDefined();
+      expect(MUSIC_STYLES.punk).toBeDefined();
+      expect(MUSIC_STYLES.grunge).toBeDefined();
+      expect(MUSIC_STYLES.alt).toBeDefined();
+      expect(MUSIC_STYLES.metal).toBeDefined();
+      expect(MUSIC_STYLES.indie).toBeDefined();
+    });
+
+    it('getAvailableStyles returns all styles with details', () => {
+      const styles = getAvailableStyles();
+      expect(styles).toHaveLength(6);
+      styles.forEach(style => {
+        expect(style.id).toBeDefined();
+        expect(style.name).toBeDefined();
+        expect(style.description).toBeDefined();
+      });
+    });
+  });
+
+  describe('character creation options', () => {
+    it('uses talent level to set player talent', () => {
+      const state = createGameState({
+        playerName: 'Test',
+        talentLevel: 'prodigy',
+        seed: 1,
+      });
+
+      expect(state.player.talent).toBe(80);
+    });
+
+    it('explicit playerTalent overrides talentLevel', () => {
+      const state = createGameState({
+        playerName: 'Test',
+        talentLevel: 'struggling',
+        playerTalent: 99,
+        seed: 1,
+      });
+
+      expect(state.player.talent).toBe(99);
+    });
+
+    it('uses preferred style in game state', () => {
+      const state = createGameState({
+        playerName: 'Test',
+        preferredStyle: 'metal',
+        seed: 1,
+      });
+
+      expect(state.preferredStyle).toBe('metal');
+    });
+
+    it('defaults preferred style to punk', () => {
+      const state = createGameState({
+        playerName: 'Test',
+        seed: 1,
+      });
+
+      expect(state.preferredStyle).toBe('punk');
+    });
+
+    it('combines all character options', () => {
+      const state = createGameState({
+        playerName: 'Axl',
+        talentLevel: 'gifted',
+        preferredStyle: 'glam',
+        difficulty: 'hard',
+        seed: 1,
+      });
+
+      expect(state.player.name).toBe('Axl');
+      expect(state.player.talent).toBe(60);
+      expect(state.preferredStyle).toBe('glam');
+      expect(state.difficulty).toBe('hard');
     });
   });
 });

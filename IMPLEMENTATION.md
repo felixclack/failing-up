@@ -157,11 +157,12 @@ src/
 - [x] Create Sellout Arc (3 stages, 6 events)
 - [x] Create Comeback Arc (3 stages, 6 events)
 - [ ] Balance tuning based on playtesting
-- [ ] Add character creation options (starting Talent, style preference)
+- [x] Add character creation options (starting Talent, style preference)
+- [x] Add difficulty system with 4 levels
 
 **Deliverable**: Full v1 content scope as defined in DESIGN.md.
 
-**Status**: COMPLETE - All 5 arcs implemented, 102 events total. 219 tests passing.
+**Status**: COMPLETE - All 5 arcs implemented, 102 events total. Difficulty system and character creation added. 248 tests passing.
 
 ---
 
@@ -300,6 +301,26 @@ src/
 - Wrote 12 new arc tests (219 total tests passing)
 - Total event count: 102 events (exceeds v1 target of 80-120)
 
+### Session 7 - Difficulty & Character Creation
+- Created difficulty system (`src/engine/difficulty.ts`):
+  - 4 difficulty levels: Easy (Garage Band), Normal (Indie Grind), Hard (Major Label Pressure), Brutal (27 Club)
+  - Multipliers for economics, stat gains/losses, event chances
+  - Starting stat adjustments per difficulty
+- Integrated difficulty into game mechanics:
+  - Weekly living costs scale with difficulty
+  - Gig payouts and fan gains modified
+  - Hype decay, health loss, addiction/burnout gains scaled
+  - Event trigger chances adjusted
+- Created character creation options:
+  - 4 talent levels: Struggling (25), Average (40), Gifted (60), Prodigy (80)
+  - 6 music style preferences: Glam, Punk, Grunge, Alt, Metal, Indie
+  - Preferred style biases song writing (60% preferred, 40% random)
+- Updated StartScreen UI with:
+  - Talent level selection
+  - Music style selection
+  - Difficulty selection
+- Wrote 29 new tests (248 total tests passing)
+
 ---
 
 ## Testing Strategy
@@ -336,10 +357,14 @@ npm run test:coverage # Generate coverage report
 
 **Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy, 4 - Bandmates, 5 - Arcs, 6 - Endings & Polish, 7 - Content Expansion
 **Active Milestone**: None - v1 Feature Complete!
-**Next Steps**: Balance tuning, character creation options, playtesting
+**Next Steps**: Balance tuning, playtesting
 
 ### What's Playable Now
-- Start a new game with your stage name
+- Start a new game with full character creation:
+  - Choose your stage name
+  - Select your talent level (Struggling to Prodigy)
+  - Pick your preferred music style
+  - Choose difficulty (Garage Band to 27 Club)
 - Choose weekly actions from 10 options
 - Watch stats change over time
 - Experience hype decay, addiction effects, burnout
