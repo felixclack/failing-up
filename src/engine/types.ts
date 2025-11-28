@@ -182,6 +182,8 @@ export interface EventTriggerConditions {
   minImage?: number;
   maxImage?: number;
   minSkill?: number;
+  // Time requirements
+  minWeek?: number;
   // Flag requirements
   onTour?: boolean;
   inStudio?: boolean;

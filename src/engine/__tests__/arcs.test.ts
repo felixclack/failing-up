@@ -22,8 +22,12 @@ import {
   ADDICTION_ARC,
   LABEL_DEAL_ARC,
   BAND_BREAKUP_ARC,
+  SELLOUT_ARC,
+  COMEBACK_ARC,
   ALL_ARCS,
   addictionArcEvents,
+  selloutArcEvents,
+  comebackArcEvents,
 } from '@/data/arcs';
 
 describe('arcs', () => {
@@ -474,6 +478,102 @@ describe('arcs', () => {
     });
   });
 
+  describe('Sellout Arc', () => {
+    it('can be entered when industry goodwill is high and money is low', () => {
+      const state = createGameState({ playerName: 'Test', seed: 1 });
+      state.player.industryGoodwill = 55;
+      state.player.hype = 40;
+      state.player.money = 2000;
+      state.player.cred = 50;
+
+      expect(canEnterArc(SELLOUT_ARC, state)).toBe(true);
+    });
+
+    it('cannot be entered when money is high', () => {
+      const state = createGameState({ playerName: 'Test', seed: 1 });
+      state.player.industryGoodwill = 55;
+      state.player.hype = 40;
+      state.player.money = 10000; // Too rich to tempt
+      state.player.cred = 50;
+
+      expect(canEnterArc(SELLOUT_ARC, state)).toBe(false);
+    });
+
+    it('cannot be entered when cred is low', () => {
+      const state = createGameState({ playerName: 'Test', seed: 1 });
+      state.player.industryGoodwill = 55;
+      state.player.hype = 40;
+      state.player.money = 2000;
+      state.player.cred = 30; // No cred to lose
+
+      expect(canEnterArc(SELLOUT_ARC, state)).toBe(false);
+    });
+
+    it('has 3 stages', () => {
+      expect(SELLOUT_ARC.stages).toHaveLength(3);
+    });
+
+    it('all sellout arc events exist', () => {
+      const selloutEventIds = SELLOUT_ARC.stages.flatMap(s => s.eventIds);
+      for (const eventId of selloutEventIds) {
+        expect(
+          selloutArcEvents.some(e => e.id === eventId)
+        ).toBe(true);
+      }
+    });
+  });
+
+  describe('Comeback Arc', () => {
+    it('can be entered when fallen from grace after some success', () => {
+      const state = createGameState({ playerName: 'Test', seed: 1 });
+      state.week = 200; // 4 years in
+      state.player.hype = 20; // Low hype
+      state.player.fans = 8000; // Had some success
+
+      expect(canEnterArc(COMEBACK_ARC, state)).toBe(true);
+    });
+
+    it('cannot be entered too early in career', () => {
+      const state = createGameState({ playerName: 'Test', seed: 1 });
+      state.week = 50; // Only 1 year in
+      state.player.hype = 20;
+      state.player.fans = 8000;
+
+      expect(canEnterArc(COMEBACK_ARC, state)).toBe(false);
+    });
+
+    it('cannot be entered when still popular', () => {
+      const state = createGameState({ playerName: 'Test', seed: 1 });
+      state.week = 200;
+      state.player.hype = 50; // Still has buzz
+      state.player.fans = 8000;
+
+      expect(canEnterArc(COMEBACK_ARC, state)).toBe(false);
+    });
+
+    it('cannot be entered without prior success', () => {
+      const state = createGameState({ playerName: 'Test', seed: 1 });
+      state.week = 200;
+      state.player.hype = 20;
+      state.player.fans = 500; // Never made it
+
+      expect(canEnterArc(COMEBACK_ARC, state)).toBe(false);
+    });
+
+    it('has 3 stages', () => {
+      expect(COMEBACK_ARC.stages).toHaveLength(3);
+    });
+
+    it('all comeback arc events exist', () => {
+      const comebackEventIds = COMEBACK_ARC.stages.flatMap(s => s.eventIds);
+      for (const eventId of comebackEventIds) {
+        expect(
+          comebackArcEvents.some(e => e.id === eventId)
+        ).toBe(true);
+      }
+    });
+  });
+
   describe('Arc events exist', () => {
     it('all arc event IDs reference existing events', () => {
       const allArcEventIds = ALL_ARCS.flatMap(arc =>
@@ -489,6 +589,15 @@ describe('arcs', () => {
           addictionArcEvents.some(e => e.id === eventId)
         ).toBe(true);
       }
+    });
+
+    it('ALL_ARCS contains all 5 arcs', () => {
+      expect(ALL_ARCS).toHaveLength(5);
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_ADDICTION');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_LABEL_DEAL');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_BAND_BREAKUP');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_SELLOUT');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_COMEBACK');
     });
   });
 });

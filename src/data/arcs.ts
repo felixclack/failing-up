@@ -655,6 +655,373 @@ export const bandBreakupArcEvents: GameEvent[] = [
 ];
 
 // =============================================================================
+// Sellout Arc
+// =============================================================================
+// Trigger: high IndustryGoodwill, decent Hype, lower Money
+// Stages: Tempting offer → the deal → backlash → consequences
+
+export const SELLOUT_ARC: Arc = {
+  id: 'ARC_SELLOUT',
+  name: 'The Temptation',
+  entryConditions: {
+    minIndustryGoodwill: 50,
+    minHype: 35,
+    maxMoney: 3000,
+    minCred: 40, // Only tempting if you have cred to lose
+  },
+  stages: [
+    {
+      stageId: 0,
+      eventIds: ['ARC_SELLOUT_S0_OFFER', 'ARC_SELLOUT_S0_PRESSURE'],
+      advanceConditions: { minIndustryGoodwill: 55 },
+    },
+    {
+      stageId: 1,
+      eventIds: ['ARC_SELLOUT_S1_DEAL', 'ARC_SELLOUT_S1_RECORDING'],
+      advanceConditions: { hasFlag: 'tookSelloutDeal' },
+    },
+    {
+      stageId: 2,
+      eventIds: ['ARC_SELLOUT_S2_BACKLASH', 'ARC_SELLOUT_S2_FALLOUT'],
+    },
+  ],
+  currentStage: 0,
+};
+
+export const selloutArcEvents: GameEvent[] = [
+  // Stage 0: The tempting offer
+  {
+    id: 'ARC_SELLOUT_S0_OFFER',
+    triggerConditions: { minIndustryGoodwill: 50, minHype: 35, maxMoney: 5000 },
+    weight: 5,
+    textIntro: 'A call from your manager: "There\'s an offer on the table. Big car company wants your song in their commercial. Six figures."',
+    choices: [
+      {
+        id: 'HEAR_THEM_OUT',
+        label: 'Hear them out',
+        outcomeText: 'You take the meeting. The number is even bigger than you thought. Very tempting.',
+        statChanges: { industryGoodwill: 3 },
+        flagsSet: ['consideringSellout'],
+      },
+      {
+        id: 'REFUSE_OUTRIGHT',
+        label: 'Refuse outright',
+        outcomeText: '"I\'m not a jingle writer." Your manager sighs. The scene respects you more.',
+        statChanges: { cred: 8, industryGoodwill: -5 },
+      },
+    ],
+    oneTime: true,
+  },
+  {
+    id: 'ARC_SELLOUT_S0_PRESSURE',
+    triggerConditions: { minIndustryGoodwill: 50, maxMoney: 3000 },
+    weight: 4,
+    textIntro: 'The bills are piling up. Your bandmates haven\'t been paid in weeks. A corporate gig offer comes in.',
+    choices: [
+      {
+        id: 'TAKE_CORPORATE',
+        label: 'Take the corporate gig',
+        outcomeText: 'You play a product launch party. The money\'s good. The music feels hollow.',
+        statChanges: { money: 2000, cred: -5 },
+        flagsSet: ['playedCorporate'],
+      },
+      {
+        id: 'STAY_PURE',
+        label: 'Stay pure',
+        outcomeText: 'You turn it down. Principles don\'t pay rent, but at least you can look in the mirror.',
+        statChanges: { cred: 3, stability: -3 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Stage 1: The deal
+  {
+    id: 'ARC_SELLOUT_S1_DEAL',
+    triggerConditions: { hasFlag: 'consideringSellout' },
+    weight: 5,
+    textIntro: 'The car company is back. Final offer: $150,000 for your hit song in their Super Bowl ad. Sign now or walk away forever.',
+    choices: [
+      {
+        id: 'SIGN_IT',
+        label: 'Sign the deal',
+        outcomeText: 'You sign. The check clears. Your song will be heard by 100 million people selling SUVs.',
+        statChanges: { money: 15000, cred: -15, industryGoodwill: 10 },
+        flagsSet: ['tookSelloutDeal'],
+      },
+      {
+        id: 'WALK_AWAY',
+        label: 'Walk away',
+        outcomeText: 'You walk. It hurts. But you wrote that song about your dead father, not for car commercials.',
+        statChanges: { cred: 10, stability: 5 },
+        flagsClear: ['consideringSellout'],
+      },
+    ],
+    oneTime: true,
+  },
+  {
+    id: 'ARC_SELLOUT_S1_RECORDING',
+    triggerConditions: { hasFlag: 'tookSelloutDeal' },
+    weight: 4,
+    textIntro: 'The ad agency wants a "radio edit" of your song. They want to change the lyrics to be more "brand-positive."',
+    choices: [
+      {
+        id: 'CHANGE_LYRICS',
+        label: 'Change the lyrics',
+        outcomeText: '"Born to drive free" replaces "Born to die free." You feel a piece of yourself die.',
+        statChanges: { cred: -10, money: 2000 },
+      },
+      {
+        id: 'REFUSE_CHANGES',
+        label: 'Refuse the changes',
+        outcomeText: 'You insist on the original lyrics. They use them. Small victory.',
+        statChanges: { cred: -3, industryGoodwill: -3 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Stage 2: The backlash
+  {
+    id: 'ARC_SELLOUT_S2_BACKLASH',
+    triggerConditions: { hasFlag: 'tookSelloutDeal' },
+    weight: 5,
+    textIntro: 'The commercial airs. Your old fans are furious. "SELLOUT" is spray-painted on your rehearsal space. Message boards are brutal.',
+    choices: [
+      {
+        id: 'DEFEND_YOURSELF',
+        label: 'Defend yourself publicly',
+        outcomeText: '"Artists need to eat too." The hot takes write themselves. You made it worse.',
+        statChanges: { cred: -8, hype: 5, stability: -5 },
+      },
+      {
+        id: 'STAY_QUIET',
+        label: 'Stay quiet and weather it',
+        outcomeText: 'You don\'t engage. The storm passes. Some fans forgive. Most don\'t forget.',
+        statChanges: { cred: -3, stability: -3 },
+      },
+      {
+        id: 'OWN_IT',
+        label: 'Own it completely',
+        outcomeText: '"Yeah, I took the money. What have you done?" Bold. Controversial. Oddly respectable.',
+        statChanges: { cred: 2, hype: 8, stability: 3 },
+      },
+    ],
+    oneTime: true,
+  },
+  {
+    id: 'ARC_SELLOUT_S2_FALLOUT',
+    triggerConditions: { hasFlag: 'tookSelloutDeal', maxCred: 40 },
+    weight: 4,
+    textIntro: 'The indie venues won\'t book you anymore. Old friends don\'t return calls. You\'ve crossed to the other side.',
+    choices: [
+      {
+        id: 'EMBRACE_MAINSTREAM',
+        label: 'Embrace the mainstream',
+        outcomeText: 'Fine. You\'ll play the bigger rooms, chase the bigger checks. This is who you are now.',
+        statChanges: { industryGoodwill: 10, cred: -5 },
+        flagsSet: ['embracedMainstream'],
+      },
+      {
+        id: 'TRY_TO_RETURN',
+        label: 'Try to return to your roots',
+        outcomeText: 'You play a tiny club, no promotion. A few dozen true believers show up. It\'s a start.',
+        statChanges: { cred: 5, hype: -5 },
+        flagsSet: ['seekingRedemption'],
+      },
+    ],
+    oneTime: true,
+  },
+];
+
+// =============================================================================
+// Comeback Arc
+// =============================================================================
+// Trigger: Prior success + major crash + time passed
+// Stages: Small indie interest → risky comeback record → redemption or irrelevance
+
+export const COMEBACK_ARC: Arc = {
+  id: 'ARC_COMEBACK',
+  name: 'Second Chances',
+  entryConditions: {
+    minWeek: 150, // At least 3 years in
+    maxHype: 25, // Fallen from grace
+    minFans: 5000, // Had some success before
+    // Note: Usually triggered after other arcs have damaged career
+  },
+  stages: [
+    {
+      stageId: 0,
+      eventIds: ['ARC_COMEBACK_S0_INTEREST', 'ARC_COMEBACK_S0_REFLECTION'],
+      advanceConditions: { minHype: 20 },
+    },
+    {
+      stageId: 1,
+      eventIds: ['ARC_COMEBACK_S1_RECORD', 'ARC_COMEBACK_S1_DOUBT'],
+      advanceConditions: { minHype: 35 },
+    },
+    {
+      stageId: 2,
+      eventIds: ['ARC_COMEBACK_S2_RELEASE', 'ARC_COMEBACK_S2_VERDICT'],
+    },
+  ],
+  currentStage: 0,
+};
+
+export const comebackArcEvents: GameEvent[] = [
+  // Stage 0: A glimmer of interest
+  {
+    id: 'ARC_COMEBACK_S0_INTEREST',
+    triggerConditions: { minWeek: 150, maxHype: 25, minFans: 5000 },
+    weight: 4,
+    textIntro: 'A small indie label reaches out. "We loved your early stuff. Would you consider recording again?"',
+    choices: [
+      {
+        id: 'TAKE_MEETING',
+        label: 'Take the meeting',
+        outcomeText: 'They\'re young, hungry, and genuine. They see something in you that you\'d forgotten was there.',
+        statChanges: { stability: 5, industryGoodwill: 3 },
+        flagsSet: ['comebackInterest'],
+      },
+      {
+        id: 'IGNORE_IT',
+        label: 'Ignore it',
+        outcomeText: 'You delete the email. Some chapters shouldn\'t have sequels.',
+        statChanges: { stability: -3 },
+      },
+    ],
+    oneTime: true,
+  },
+  {
+    id: 'ARC_COMEBACK_S0_REFLECTION',
+    triggerConditions: { minWeek: 150, maxHype: 20 },
+    weight: 4,
+    textIntro: 'You find old recordings in a box. Before the deals, the drama, the destruction. Just pure music. You remember why you started.',
+    choices: [
+      {
+        id: 'PLAY_THEM',
+        label: 'Play them again',
+        outcomeText: 'You listen all night. Something stirs. Maybe it\'s not too late.',
+        statChanges: { stability: 5, burnout: -5 },
+        flagsSet: ['foundOldSelf'],
+      },
+      {
+        id: 'PUT_AWAY',
+        label: 'Put the box away',
+        outcomeText: 'Some memories are better left buried. You close the lid.',
+        statChanges: { stability: -3 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Stage 1: The risky record
+  {
+    id: 'ARC_COMEBACK_S1_RECORD',
+    triggerConditions: { hasFlag: 'comebackInterest', minHype: 20 },
+    weight: 5,
+    textIntro: 'The indie label offers a deal. Small advance, full creative control. One album to prove you still have it.',
+    choices: [
+      {
+        id: 'TAKE_THE_CHANCE',
+        label: 'Take the chance',
+        outcomeText: 'You sign. Back in the studio. It feels terrifying and right.',
+        statChanges: { money: 1000, stability: 5, hype: 5 },
+        flagsSet: ['recordingComeback'],
+      },
+      {
+        id: 'ASK_FOR_MORE',
+        label: 'Ask for more money',
+        outcomeText: 'They can\'t afford more. The deal falls through. Maybe next time.',
+        statChanges: { industryGoodwill: -3 },
+        flagsClear: ['comebackInterest'],
+      },
+    ],
+    oneTime: true,
+  },
+  {
+    id: 'ARC_COMEBACK_S1_DOUBT',
+    triggerConditions: { hasFlag: 'recordingComeback' },
+    weight: 4,
+    textIntro: 'Halfway through recording. The songs aren\'t coming. You stare at blank pages. The doubts scream louder than the music.',
+    choices: [
+      {
+        id: 'PUSH_THROUGH',
+        label: 'Push through',
+        outcomeText: 'You write through the fear. The songs that emerge are raw, honest, painful. Real.',
+        statChanges: { skill: 3, burnout: 5, stability: -3 },
+      },
+      {
+        id: 'TAKE_A_BREAK',
+        label: 'Take a break',
+        outcomeText: 'You step away for a week. Come back with clearer eyes. The muse returns.',
+        statChanges: { burnout: -5, stability: 5 },
+      },
+      {
+        id: 'SPIRAL',
+        label: 'Give in to doubt',
+        outcomeText: 'You drink. You stop showing up. The album stalls. History repeating.',
+        statChanges: { addiction: 8, stability: -10, industryGoodwill: -5 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Stage 2: The verdict
+  {
+    id: 'ARC_COMEBACK_S2_RELEASE',
+    triggerConditions: { hasFlag: 'recordingComeback', minHype: 35 },
+    weight: 5,
+    textIntro: 'Release day. The comeback album is out. The reviews start coming in. The internet has opinions.',
+    choices: [
+      {
+        id: 'READ_EVERYTHING',
+        label: 'Read every review',
+        outcomeText: 'Some love it. Some hate it. The ones that matter understand what you were trying to do.',
+        statChanges: { stability: -5, hype: 10 },
+      },
+      {
+        id: 'IGNORE_PRESS',
+        label: 'Ignore the press',
+        outcomeText: 'You don\'t read any of it. The music is out there. That\'s all that matters.',
+        statChanges: { stability: 5, cred: 3 },
+      },
+    ],
+    oneTime: true,
+  },
+  {
+    id: 'ARC_COMEBACK_S2_VERDICT',
+    triggerConditions: { hasFlag: 'recordingComeback', minHype: 40 },
+    weight: 5,
+    textIntro: 'A month after release. The album is charting. Old fans are coming back. New fans are discovering you. The comeback is real.',
+    choices: [
+      {
+        id: 'STAY_HUMBLE',
+        label: 'Stay humble',
+        outcomeText: 'You\'ve been here before. You know how fast it can disappear. This time, you\'ll do it right.',
+        statChanges: { cred: 10, stability: 10 },
+        flagsSet: ['comebackSuccess', 'stayedHumble'],
+      },
+      {
+        id: 'ENJOY_VICTORY',
+        label: 'Enjoy the victory',
+        outcomeText: 'You celebrate. You deserve this. After everything, you came back. They can never take that away.',
+        statChanges: { hype: 10, addiction: 3 },
+        flagsSet: ['comebackSuccess'],
+      },
+      {
+        id: 'ALREADY_PLANNING',
+        label: 'Already planning the next one',
+        outcomeText: 'No rest. You\'re already writing. The fire is back. More to prove. More to say.',
+        statChanges: { skill: 3, burnout: 5, hype: 5 },
+        flagsSet: ['comebackSuccess', 'drivenAgain'],
+      },
+    ],
+    oneTime: true,
+  },
+];
+
+// =============================================================================
 // All Arc Templates
 // =============================================================================
 
@@ -662,6 +1029,8 @@ export const ALL_ARCS: Arc[] = [
   ADDICTION_ARC,
   LABEL_DEAL_ARC,
   BAND_BREAKUP_ARC,
+  SELLOUT_ARC,
+  COMEBACK_ARC,
 ];
 
 // All arc-specific events combined
@@ -669,4 +1038,6 @@ export const ALL_ARC_EVENTS: GameEvent[] = [
   ...addictionArcEvents,
   ...labelDealArcEvents,
   ...bandBreakupArcEvents,
+  ...selloutArcEvents,
+  ...comebackArcEvents,
 ];

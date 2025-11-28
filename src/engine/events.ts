@@ -47,6 +47,9 @@ export function checkTriggerConditions(
   if (conditions.maxImage !== undefined && player.image > conditions.maxImage) return false;
   if (conditions.minSkill !== undefined && player.skill < conditions.minSkill) return false;
 
+  // Time checks
+  if (conditions.minWeek !== undefined && state.week < conditions.minWeek) return false;
+
   // Flag checks
   if (conditions.onTour !== undefined && player.flags.onTour !== conditions.onTour) return false;
   if (conditions.inStudio !== undefined && player.flags.inStudio !== conditions.inStudio) return false;
@@ -252,11 +255,18 @@ export function applyEventChoice(
   // Apply flag changes
   if (choice.flagsSet || choice.flagsClear) {
     const flags = { ...newState.player.flags };
+    let triggeredIds = [...newState.triggeredEventIds];
 
     if (choice.flagsSet) {
       for (const flag of choice.flagsSet) {
         if (flag in flags) {
+          // Predefined flag
           (flags as any)[flag] = true;
+        } else {
+          // Custom flag - store in triggeredEventIds for hasFlag checks
+          if (!triggeredIds.includes(flag)) {
+            triggeredIds.push(flag);
+          }
         }
       }
     }
@@ -264,12 +274,17 @@ export function applyEventChoice(
     if (choice.flagsClear) {
       for (const flag of choice.flagsClear) {
         if (flag in flags) {
+          // Predefined flag
           (flags as any)[flag] = false;
+        } else {
+          // Custom flag - remove from triggeredEventIds
+          triggeredIds = triggeredIds.filter(id => id !== flag);
         }
       }
     }
 
     newState.player = { ...newState.player, flags };
+    newState.triggeredEventIds = triggeredIds;
   }
 
   // Mark one-time event as triggered
