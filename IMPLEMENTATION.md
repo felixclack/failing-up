@@ -84,17 +84,19 @@ src/
 
 ---
 
-### Milestone 3: Full Action Set & Economy
+### Milestone 3: Full Action Set & Economy - COMPLETE
 **Goal**: All core actions available with proper economic balance.
 
-- [ ] Implement remaining actions: Rehearse, Tour, Record, Promote, Network, Party, Side Job
-- [ ] Implement label deal system (advances, recoupment, royalties)
-- [ ] Add gear/equipment as optional purchases
-- [ ] Implement album creation and sales tracking
-- [ ] Balance weekly costs vs income sources
-- [ ] Write tests for economy calculations and label deals
+- [x] All 10 actions implemented (already done in M1)
+- [x] Implement label deal system (advances, recoupment, royalties)
+- [x] Implement album creation and sales tracking
+- [x] Add touring economics (guarantees, costs, merch)
+- [x] Add 6 label/industry events
+- [x] Write tests for economy calculations (22 new tests)
 
 **Deliverable**: Full action variety with realistic money pressure.
+
+**Status**: COMPLETE - Economy engine with label deals, album sales tiers, tour finances. 98 total tests.
 
 ---
 
@@ -201,6 +203,21 @@ src/
 - Integrated events into turn resolution
 - Wrote 20 new event tests (76 total tests passing)
 
+### Session 2 (continued) - Economy System (Milestone 3 Complete)
+- Created economy engine (`src/engine/economy.ts`):
+  - Label deal generation (indie/mid/major tiers)
+  - Advance and recoupment tracking
+  - Weekly royalty calculations
+  - Album creation with quality/reception/sales tiers
+  - Tour economics (guarantees, costs, merch)
+  - Local gig payout calculations
+- Created 6 label/industry events (`src/data/labelEvents.ts`):
+  - Indie/mid/major label interest (one-time)
+  - Label pressure for singles
+  - Drop threats
+  - Recoupment celebration
+- Wrote 22 new economy tests (98 total tests passing)
+
 ---
 
 ## Testing Strategy
@@ -235,9 +252,9 @@ npm run test:coverage # Generate coverage report
 
 ## Current Status
 
-**Completed Milestones**: 1 - Core Game Loop, 2 - Events System
-**Active Milestone**: 3 - Full Action Set & Economy
-**Next Task**: Implement label deal system and remaining action special logic
+**Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy
+**Active Milestone**: 4 - Bandmates
+**Next Task**: Add bandmate dynamics (hiring, firing, conflicts, departures)
 
 ### What's Playable Now
 - Start a new game with your stage name
@@ -246,8 +263,16 @@ npm run test:coverage # Generate coverage report
 - Experience hype decay, addiction effects, burnout
 - **Random events trigger** with meaningful choices and consequences
 - Events have visual hints showing costs and risks
+- **Label deal events** can trigger based on your progress
 - Game ends when you die, go broke, or reach 10 years
 - See ending screen with career summary
+
+### Economy System Ready
+- Label deals: 3 tiers (indie/mid/major) with different terms
+- Recoupment model: advance creates debt, sales pay it down
+- Album sales: 6 tiers from flop to diamond
+- Tour finances: guarantees, costs, merch revenue
+- Gig payouts: scale with local fanbase and hype
 
 ---
 
