@@ -131,18 +131,20 @@ src/
 
 ---
 
-### Milestone 6: Endings & Polish
+### Milestone 6: Endings & Polish - COMPLETE
 **Goal**: Satisfying conclusions with narrative callbacks.
 
-- [ ] Implement ending determination algorithm
-- [ ] Create 6 base endings with variations
-- [ ] Add ending callbacks to reference past events
-- [ ] Add game history/log for ending summary
-- [ ] Create new game / restart flow
-- [ ] UI polish: animations, better typography, responsive design
-- [ ] Write tests for ending selection
+- [x] Implement ending determination algorithm
+- [x] Create 9 base endings with variations
+- [x] Add ending callbacks to reference past events
+- [x] Add game history/log for ending summary
+- [x] Create new game / restart flow
+- [x] Improved EndingScreen UI with stats grid and callbacks
+- [x] Write tests for ending selection (22 tests)
 
 **Deliverable**: Complete game loop with meaningful endings.
+
+**Status**: COMPLETE - Ending system with 9 endings, variations, and callbacks. 207 total tests.
 
 ---
 
@@ -261,6 +263,20 @@ src/
   - Check and advance arcs based on conditions
 - Wrote 44 new arc tests (185 total tests passing)
 
+### Session 5 - Endings System (Milestone 6 Complete)
+- Created ending engine (`src/engine/endings.ts`):
+  - Score-based ending determination algorithm
+  - 9 ending types: LEGEND, STAR, SURVIVOR, CULT_HERO, BURNOUT, TRAGEDY, OBSCURITY, SELLOUT, COMEBACK_KID
+  - Variations for each ending based on specific conditions
+  - Callback generation referencing past arcs, events, and achievements
+  - Display helpers for colors and icons
+- Rewrote EndingScreen (`src/components/game/EndingScreen.tsx`):
+  - Dynamic title/subtitle/narrative from ending result
+  - "Your Story" callbacks section with categorized icons
+  - Stats grid: Career Stats, Creative Output, Band Status, Final State
+  - Responsive design with improved typography
+- Wrote 22 new ending tests (207 total tests passing)
+
 ---
 
 ## Testing Strategy
@@ -295,9 +311,9 @@ npm run test:coverage # Generate coverage report
 
 ## Current Status
 
-**Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy, 4 - Bandmates, 5 - Arcs
-**Active Milestone**: 6 - Endings & Polish
-**Next Task**: Implement ending determination algorithm
+**Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy, 4 - Bandmates, 5 - Arcs, 6 - Endings & Polish
+**Active Milestone**: 7 - Content Expansion
+**Next Task**: Expand event content for more varied gameplay
 
 ### What's Playable Now
 - Start a new game with your stage name
@@ -315,7 +331,10 @@ npm run test:coverage # Generate coverage report
   - Label deal negotiations and industry pressure
   - Band breakup drama with ultimatums and lineup changes
 - Game ends when you die, go broke, or reach 10 years
-- See ending screen with career summary
+- **Meaningful endings** based on your journey:
+  - 9 different endings with variations
+  - Callbacks reference your past events and achievements
+  - Detailed stats summary of your career
 
 ### Economy System Ready
 - Label deals: 3 tiers (indie/mid/major) with different terms
@@ -340,6 +359,13 @@ npm run test:coverage # Generate coverage report
   - Addiction Arc: 4 stages from partying to OD scare
   - Label Deal Arc: 4 stages from interest to pressure
   - Band Breakup Arc: 3 stages from tension to collapse
+
+### Ending System Ready
+- Score-based ending determination from 9 ending types
+- Variations trigger based on specific conditions
+- Callback system references significant moments
+- 9 endings: Legend, Star, Survivor, Cult Hero, Burnout, Tragedy, Obscurity, Sellout, Comeback Kid
+- Enhanced EndingScreen with detailed career summary
 
 ---
 

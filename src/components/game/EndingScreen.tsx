@@ -1,122 +1,173 @@
 'use client';
 
-import { GameState, GameOverReason } from '@/engine/types';
+import { GameState } from '@/engine/types';
+import {
+  getEndingResult,
+  getEndingColor,
+  getEndingIcon,
+  EndingCallback,
+} from '@/engine/endings';
 
 interface EndingScreenProps {
   gameState: GameState;
   onRestart: () => void;
 }
 
-function getEndingTitle(reason: GameOverReason): string {
-  switch (reason) {
-    case 'death':
-      return 'Gone Too Soon';
-    case 'broke':
-      return 'Broke & Blacklisted';
-    case 'blacklisted':
-      return 'Industry Exile';
-    case 'time_limit':
-      return 'The End of an Era';
-    case 'band_collapsed':
-      return 'The Band Falls Apart';
-    case 'voluntary_retirement':
-      return 'Walking Away';
-    default:
-      return 'Game Over';
-  }
-}
-
-function getEndingDescription(gameState: GameState): string {
-  const { player, gameOverReason, week } = gameState;
-  const years = Math.floor(week / 52);
-
-  switch (gameOverReason) {
-    case 'death':
-      if (player.addiction >= 70) {
-        return `After ${years} years in the scene, the lifestyle finally caught up with ${player.name}. Another cautionary tale in the annals of rock history.`;
-      }
-      return `${player.name}'s body gave out after ${years} years of pushing too hard. The music world mourns.`;
-
-    case 'broke':
-      return `With debts mounting and no one willing to take a chance, ${player.name} fades into obscurity. Sometimes the music business chews you up and spits you out.`;
-
-    case 'time_limit':
-      if (player.fans >= 100000) {
-        return `After a decade in the business, ${player.name} has built something real. ${player.fans.toLocaleString()} fans can't be wrong.`;
-      }
-      if (player.fans >= 10000) {
-        return `Ten years of grinding. ${player.name} never made it big, but there's a loyal following who remember the good times.`;
-      }
-      return `A decade passes. ${player.name} gave it a shot, but the big break never came. Time to find a new dream.`;
-
-    case 'band_collapsed':
-      return `Without a band, there's no show. ${player.name} watches the last member walk out the door, wondering what went wrong.`;
-
-    default:
-      return `${player.name}'s story comes to an end.`;
-  }
-}
-
-function StatSummary({ label, value }: { label: string; value: string | number }) {
+function StatSummary({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
   return (
-    <div className="flex justify-between py-2 border-b border-gray-700">
+    <div className="flex justify-between py-2 border-b border-gray-700/50 last:border-b-0">
       <span className="text-gray-400">{label}</span>
-      <span className="text-white font-semibold">{value}</span>
+      <span className={`font-semibold ${highlight ? 'text-yellow-400' : 'text-white'}`}>{value}</span>
+    </div>
+  );
+}
+
+function CallbackCard({ callback }: { callback: EndingCallback }) {
+  const iconMap = {
+    arc: '📖',
+    event: '⚡',
+    achievement: '🏆',
+    stat: '📊',
+  };
+
+  return (
+    <div className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+      <span className="text-xl">{iconMap[callback.type]}</span>
+      <p className="text-gray-300 text-sm leading-relaxed">{callback.text}</p>
     </div>
   );
 }
 
 export function EndingScreen({ gameState, onRestart }: EndingScreenProps) {
-  const { player, week, gameOverReason, songs, albums } = gameState;
+  const { player, week, songs, albums, bandmates, labelDeals, completedArcIds } = gameState;
   const years = Math.floor(week / 52);
   const weeks = week % 52;
 
+  // Get the full ending result
+  const ending = getEndingResult(gameState);
+  const endingColor = getEndingColor(ending.id);
+  const endingIcon = getEndingIcon(ending.id);
+
+  // Format stats
   const fansFormatted = player.fans >= 1000000
     ? `${(player.fans / 1000000).toFixed(1)}M`
     : player.fans >= 1000
       ? `${(player.fans / 1000).toFixed(1)}K`
       : player.fans.toString();
 
+  const moneyFormatted = player.money >= 0
+    ? `$${player.money.toLocaleString()}`
+    : `-$${Math.abs(player.money).toLocaleString()}`;
+
+  // Count achievements
+  const platinumAlbums = albums.filter(a => a.salesTier === 'platinum' || a.salesTier === 'diamond').length;
+  const activeBandmates = bandmates.filter(b => b.status === 'active').length;
+  const deadBandmates = bandmates.filter(b => b.status === 'dead').length;
+
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        {/* Title */}
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex items-center justify-center p-4">
+      <div className="max-w-3xl w-full">
+        {/* Title Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-red-500 mb-2">
-            {getEndingTitle(gameOverReason!)}
+          <div className="text-6xl mb-4">{endingIcon}</div>
+          <h1 className={`text-5xl font-bold ${endingColor} mb-2`}>
+            {ending.title}
           </h1>
-          <p className="text-xl text-gray-400">
+          <p className="text-xl text-gray-400 italic">
+            {ending.subtitle}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
             The story of {player.name}
           </p>
         </div>
 
-        {/* Narrative */}
-        <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 mb-6">
-          <p className="text-lg text-gray-200 leading-relaxed">
-            {getEndingDescription(gameState)}
+        {/* Main Narrative */}
+        <div className="bg-gray-900/80 p-8 rounded-xl border border-gray-700/50 mb-6 backdrop-blur">
+          <p className="text-xl text-gray-200 leading-relaxed text-center">
+            {ending.narrative}
           </p>
         </div>
 
-        {/* Stats Summary */}
-        <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 mb-6">
-          <h2 className="text-lg font-bold text-white mb-4">Career Summary</h2>
-          <StatSummary label="Career Length" value={`${years} years, ${weeks} weeks`} />
-          <StatSummary label="Peak Fans" value={fansFormatted} />
-          <StatSummary label="Final Balance" value={`$${player.money.toLocaleString()}`} />
-          <StatSummary label="Songs Written" value={songs.length} />
-          <StatSummary label="Albums Released" value={albums.filter(a => a.weekReleased).length} />
-          <StatSummary label="Final Cred" value={player.cred} />
-          <StatSummary label="Cause of End" value={gameOverReason?.replace('_', ' ') || 'Unknown'} />
+        {/* Callbacks - Your Story */}
+        {ending.callbacks.length > 0 && (
+          <div className="bg-gray-900/80 p-6 rounded-xl border border-gray-700/50 mb-6 backdrop-blur">
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <span>📜</span> Your Story
+            </h2>
+            <div className="space-y-3">
+              {ending.callbacks.map((callback, index) => (
+                <CallbackCard key={index} callback={callback} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Career Stats */}
+          <div className="bg-gray-900/80 p-5 rounded-xl border border-gray-700/50 backdrop-blur">
+            <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <span>📊</span> Career Stats
+            </h2>
+            <StatSummary label="Career Length" value={`${years}y ${weeks}w`} />
+            <StatSummary label="Peak Fans" value={fansFormatted} highlight={player.fans >= 100000} />
+            <StatSummary label="Final Balance" value={moneyFormatted} highlight={player.money >= 50000} />
+            <StatSummary label="Street Cred" value={`${player.cred}/100`} highlight={player.cred >= 70} />
+            <StatSummary label="Industry Rep" value={`${player.industryGoodwill}/100`} />
+          </div>
+
+          {/* Creative Output */}
+          <div className="bg-gray-900/80 p-5 rounded-xl border border-gray-700/50 backdrop-blur">
+            <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <span>🎵</span> Creative Output
+            </h2>
+            <StatSummary label="Songs Written" value={songs.length} />
+            <StatSummary label="Albums Released" value={albums.length} />
+            <StatSummary label="Platinum Albums" value={platinumAlbums} highlight={platinumAlbums > 0} />
+            <StatSummary label="Label Deals" value={labelDeals.length} />
+            <StatSummary label="Arcs Completed" value={completedArcIds.length} />
+          </div>
+        </div>
+
+        {/* Band & Health */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {/* Band Status */}
+          <div className="bg-gray-900/80 p-5 rounded-xl border border-gray-700/50 backdrop-blur">
+            <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <span>🎸</span> The Band
+            </h2>
+            <StatSummary label="Active Members" value={activeBandmates} />
+            <StatSummary label="Total Bandmates" value={bandmates.length} />
+            {deadBandmates > 0 && (
+              <StatSummary label="Fallen Comrades" value={deadBandmates} />
+            )}
+          </div>
+
+          {/* Personal State */}
+          <div className="bg-gray-900/80 p-5 rounded-xl border border-gray-700/50 backdrop-blur">
+            <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <span>💊</span> Final State
+            </h2>
+            <StatSummary label="Health" value={`${player.health}/100`} highlight={player.health >= 70} />
+            <StatSummary label="Stability" value={`${player.stability}/100`} highlight={player.stability >= 70} />
+            <StatSummary label="Addiction Level" value={`${player.addiction}/100`} />
+            <StatSummary label="Burnout" value={`${player.burnout}/100`} />
+          </div>
         </div>
 
         {/* Actions */}
         <div className="flex justify-center gap-4">
           <button
             onClick={onRestart}
-            className="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors"
+            className="px-10 py-4 bg-red-600 hover:bg-red-500 text-white font-bold text-lg rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-red-900/30"
           >
-            Try Again
+            Start New Career
           </button>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 text-gray-600 text-sm">
+          Failing Up: A Rock Star Story
         </div>
       </div>
     </div>
