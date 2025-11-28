@@ -7,6 +7,7 @@ import {
   getEndingIcon,
   EndingCallback,
 } from '@/engine/endings';
+import { getTotalFans } from '@/engine/state';
 
 interface EndingScreenProps {
   gameState: GameState;
@@ -50,11 +51,12 @@ export function EndingScreen({ gameState, onPlayAgain, onNewGame }: EndingScreen
   const endingIcon = getEndingIcon(ending.id);
 
   // Format stats
-  const fansFormatted = player.fans >= 1000000
-    ? `${(player.fans / 1000000).toFixed(1)}M`
-    : player.fans >= 1000
-      ? `${(player.fans / 1000).toFixed(1)}K`
-      : player.fans.toString();
+  const totalFans = getTotalFans(player);
+  const fansFormatted = totalFans >= 1000000
+    ? `${(totalFans / 1000000).toFixed(1)}M`
+    : totalFans >= 1000
+      ? `${(totalFans / 1000).toFixed(1)}K`
+      : totalFans.toString();
 
   const moneyFormatted = player.money >= 0
     ? `$${player.money.toLocaleString()}`
@@ -111,7 +113,7 @@ export function EndingScreen({ gameState, onPlayAgain, onNewGame }: EndingScreen
               <span>📊</span> Career Stats
             </h2>
             <StatSummary label="Career Length" value={`${years}y ${weeks}w`} />
-            <StatSummary label="Peak Fans" value={fansFormatted} highlight={player.fans >= 100000} />
+            <StatSummary label="Peak Fans" value={fansFormatted} highlight={totalFans >= 100000} />
             <StatSummary label="Final Balance" value={moneyFormatted} highlight={player.money >= 50000} />
             <StatSummary label="Street Cred" value={`${player.cred}/100`} highlight={player.cred >= 70} />
             <StatSummary label="Industry Rep" value={`${player.industryGoodwill}/100`} />

@@ -7,6 +7,7 @@
  */
 
 import { GameState, GameOverReason } from './types';
+import { getTotalFans } from './state';
 
 // =============================================================================
 // Ending Types
@@ -21,7 +22,12 @@ export type EndingId =
   | 'TRAGEDY'          // Death ending
   | 'OBSCURITY'        // Faded away, forgotten
   | 'SELLOUT'          // Commercial success, no respect
-  | 'COMEBACK_KID';    // Recovered from rock bottom
+  | 'COMEBACK_KID'     // Recovered from rock bottom
+  // Digital Era Endings
+  | 'ALGORITHM_CASUALTY'  // Built career on platform that changed
+  | 'CONTENT_PRISON'      // Trapped in content creation
+  | 'DIY_PIONEER'         // Built own following independently
+  | 'VIRAL_GHOST';        // Had viral moment, then faded
 
 export interface EndingVariation {
   condition: (state: GameState) => boolean;
@@ -130,7 +136,7 @@ const ENDINGS: Ending[] = [
     baseNarrative: 'You never topped the charts. But ask anyone who really knows music, and they know your name. The cognoscenti, the collectors, the true believers - you\'re their hero.',
     variations: [
       {
-        condition: (state) => state.player.cred >= 70 && state.player.fans < 50000,
+        condition: (state) => state.player.cred >= 70 && getTotalFans(state.player) < 50000,
         title: 'The Critic\'s Darling',
         subtitle: 'Beloved by those who matter',
         narrative: 'The critics love you. The other musicians love you. Every best-of list has your name on it. You just never figured out how to reach the masses.',
@@ -180,7 +186,7 @@ const ENDINGS: Ending[] = [
         narrative: 'Addiction took you like it took so many before. They\'ll write songs about you, documentaries, books. Cold comfort for the ones you left behind.',
       },
       {
-        condition: (state) => state.player.fans >= 100000,
+        condition: (state) => getTotalFans(state.player) >= 100000,
         title: 'A Legend Dies',
         subtitle: 'The world weeps',
         narrative: 'You were on top of the world. Then you were gone. Vigils in the streets, candles in the windows. They never got to say goodbye.',
@@ -243,10 +249,158 @@ const ENDINGS: Ending[] = [
         condition: (state) =>
           state.triggeredEventIds.includes('ARC_ADDICTION_S3_OD_SCARE') &&
           state.player.addiction < 30 &&
-          state.player.fans >= 10000,
+          getTotalFans(state.player) >= 10000,
         title: 'From Rock Bottom',
         subtitle: 'The ultimate second act',
         narrative: 'They wrote you off. Obituaries half-written. Then you came back, sober and stronger. Now your story inspires everyone who\'s ever fallen down.',
+      },
+    ],
+  },
+
+  // =============================================================================
+  // Digital Era Endings
+  // =============================================================================
+
+  // ALGORITHM CASUALTY - Built career on platform that changed
+  {
+    id: 'ALGORITHM_CASUALTY',
+    baseTitle: 'Algorithm Casualty',
+    baseSubtitle: 'The platform giveth, the platform taketh away',
+    baseNarrative: 'You built everything on one platform. Then they changed the rules. Your reach vanished overnight. Now you\'re a cautionary tale for every creator who puts all their eggs in one basket.',
+    variations: [
+      {
+        condition: (state) =>
+          state.completedArcIds.includes('ARC_PLATFORM_DEPENDENCY') &&
+          state.player.followers >= 100000,
+        title: 'The Former Influencer',
+        subtitle: 'Remember when you had a million followers?',
+        narrative: 'At your peak, brands begged to work with you. Then the algorithm changed. Same content, invisible results. The followers are still there - they just never see you anymore.',
+      },
+      {
+        condition: (state) =>
+          state.player.algoBoost < 20 &&
+          state.player.followers >= 50000,
+        title: 'Shadowbanned',
+        subtitle: 'The platform forgot your name',
+        narrative: 'No notification. No explanation. Just silence. You post to tens of thousands of followers and hear nothing back. The algorithm has moved on.',
+      },
+      {
+        condition: (state) =>
+          state.triggeredEventIds.includes('ARC_PLATFORM_S0_CHANGE'),
+        title: 'Caught in the Shift',
+        subtitle: 'Yesterday\'s format, yesterday\'s star',
+        narrative: 'You mastered one type of content. Then the platform pivoted to something completely different. Your skills became obsolete overnight.',
+      },
+    ],
+  },
+
+  // CONTENT PRISON - Trapped in content creation
+  {
+    id: 'CONTENT_PRISON',
+    baseTitle: 'Content Creator Prison',
+    baseSubtitle: 'You can\'t stop, you won\'t stop',
+    baseNarrative: 'You wanted to make music. Now you make content. Endless content. The algorithm demands constant feeding, and you\'ve become its servant. When did you last write a song?',
+    variations: [
+      {
+        condition: (state) =>
+          state.completedArcIds.includes('ARC_CREATOR_BURNOUT') &&
+          state.player.burnout >= 70,
+        title: 'The Burnout',
+        subtitle: 'Can\'t stop even though you\'re empty',
+        narrative: 'The numbers dip if you take even one day off. So you don\'t. You can\'t. The content machine has no off switch. You\'ve forgotten what rest feels like.',
+      },
+      {
+        condition: (state) =>
+          state.player.stability < 30 &&
+          state.player.followers >= 50000,
+        title: 'The Perform-Former',
+        subtitle: 'The mask is stuck',
+        narrative: 'You\'ve been performing happiness so long you forgot how to actually feel it. The camera persona took over. Who are you when you\'re not on?',
+      },
+      {
+        condition: (state) =>
+          state.player.burnout >= 80 &&
+          state.player.coreFans < 500,
+        title: 'Posting Into the Void',
+        subtitle: 'A million followers, no real fans',
+        narrative: 'All those followers and none of them would notice if you quit. The engagement is hollow. The community is fake. You\'re shouting into the void.',
+      },
+    ],
+  },
+
+  // DIY PIONEER - Built own following independently
+  {
+    id: 'DIY_PIONEER',
+    baseTitle: 'DIY Pioneer',
+    baseSubtitle: 'You did it your way',
+    baseNarrative: 'No label, no manager, no middlemen. You built a direct relationship with your fans and proved the old system isn\'t the only path. You\'re not rich or famous, but you\'re free.',
+    variations: [
+      {
+        condition: (state) =>
+          state.completedArcIds.includes('ARC_DIY_PATRON') &&
+          state.player.coreFans >= 3000,
+        title: 'The Independent Model',
+        subtitle: 'The thousand true fans, realized',
+        narrative: 'You found your people and they found you. A few thousand true fans who pay directly for what you create. It\'s not stadium money, but it\'s honest money.',
+      },
+      {
+        condition: (state) =>
+          state.triggeredEventIds.includes('diyManifesto') &&
+          state.player.cred >= 60,
+        title: 'The Movement Starter',
+        subtitle: 'Others followed your path',
+        narrative: 'Your DIY success became a blueprint. Other artists followed your lead, building their own direct-to-fan empires. You didn\'t just make it - you showed the way.',
+      },
+      {
+        condition: (state) =>
+          !state.player.flags.hasLabelDeal &&
+          state.player.money >= 20000 &&
+          state.player.coreFans >= 2000,
+        title: 'The Self-Made',
+        subtitle: 'Every dollar earned yourself',
+        narrative: 'You never signed away your rights. Every stream, every sale, every penny - it\'s yours. The accountants at the labels will never touch your money.',
+      },
+    ],
+  },
+
+  // VIRAL GHOST - Had viral moment, then faded
+  {
+    id: 'VIRAL_GHOST',
+    baseTitle: 'Viral Ghost',
+    baseSubtitle: 'You had your moment',
+    baseNarrative: 'For one glorious moment, the entire internet knew your name. Then they moved on. You\'re left with the memory of fifteen minutes and the question of what might have been.',
+    variations: [
+      {
+        condition: (state) =>
+          state.completedArcIds.includes('ARC_VIRAL_ONE_HIT') &&
+          state.player.algoBoost < 30,
+        title: 'The One-Hit Wonder',
+        subtitle: 'That one song was everywhere. Then nowhere.',
+        narrative: 'Everyone knew the song. The clip, the meme, the sound. But they never clicked through to see who made it. You\'re famous and anonymous at the same time.',
+      },
+      {
+        condition: (state) =>
+          state.triggeredEventIds.includes('becameMeme') &&
+          getTotalFans(state.player) < 20000,
+        title: 'The Meme',
+        subtitle: 'They know your face, not your music',
+        narrative: 'Your face became a meme. Millions shared it. Zero bought your album. You\'re not a musician anymore - you\'re a reaction image.',
+      },
+      {
+        condition: (state) =>
+          state.player.followers >= 100000 &&
+          state.player.coreFans < 500,
+        title: 'The Hollow Following',
+        subtitle: 'A million ghosts',
+        narrative: 'Look at all those followers! None of them listen to your music. None of them buy tickets. They followed once and forgot. You\'re a number, not an artist.',
+      },
+      {
+        condition: (state) =>
+          state.triggeredEventIds.includes('chasedViral') &&
+          state.player.cred < 30,
+        title: 'The Algorithm Slave',
+        subtitle: 'You became what they wanted',
+        narrative: 'You stopped making your music and started chasing trends. Each video less authentic than the last. You found the formula - and lost yourself.',
       },
     ],
   },
@@ -264,26 +418,27 @@ function calculateEndingScore(
   state: GameState
 ): number {
   const { player, gameOverReason, completedArcIds } = state;
+  const totalFans = getTotalFans(player);
   let score = 0;
 
   switch (endingId) {
     case 'LEGEND':
-      if (player.fans >= 500000) score += 100;
-      else if (player.fans >= 200000) score += 50;
+      if (totalFans >= 500000) score += 100;
+      else if (totalFans >= 200000) score += 50;
       if (player.cred >= 70) score += 30;
       if (player.money >= 100000) score += 20;
       if (completedArcIds.includes('ARC_LABEL_DEAL')) score += 20;
       break;
 
     case 'STAR':
-      if (player.fans >= 100000) score += 80;
-      else if (player.fans >= 50000) score += 50;
+      if (totalFans >= 100000) score += 80;
+      else if (totalFans >= 50000) score += 50;
       if (player.money >= 50000) score += 30;
       if (player.hype >= 60) score += 20;
       break;
 
     case 'SURVIVOR':
-      if (player.fans >= 5000 && player.fans < 100000) score += 50;
+      if (totalFans >= 5000 && totalFans < 100000) score += 50;
       if (player.health >= 50) score += 30;
       if (player.stability >= 50) score += 30;
       if (player.money >= 0) score += 20;
@@ -292,7 +447,7 @@ function calculateEndingScore(
 
     case 'CULT_HERO':
       if (player.cred >= 60) score += 50;
-      if (player.fans >= 1000 && player.fans < 50000) score += 40;
+      if (totalFans >= 1000 && totalFans < 50000) score += 40;
       if (state.songs.length >= 20) score += 20;
       break;
 
@@ -308,7 +463,7 @@ function calculateEndingScore(
       break;
 
     case 'OBSCURITY':
-      if (player.fans < 1000) score += 60;
+      if (totalFans < 1000) score += 60;
       if (player.industryGoodwill < 20) score += 40;
       if (gameOverReason === 'broke') score += 50;
       if (player.hype < 20) score += 30;
@@ -322,8 +477,33 @@ function calculateEndingScore(
     case 'COMEBACK_KID':
       const hadAddictionArc = completedArcIds.includes('ARC_ADDICTION');
       const recovered = player.addiction < 40;
-      const stillSuccessful = player.fans >= 10000;
+      const stillSuccessful = totalFans >= 10000;
       if (hadAddictionArc && recovered && stillSuccessful) score += 100;
+      break;
+
+    // Digital Era Endings
+    case 'ALGORITHM_CASUALTY':
+      if (completedArcIds.includes('ARC_PLATFORM_DEPENDENCY')) score += 60;
+      if (player.algoBoost < 20 && player.followers >= 30000) score += 50;
+      if (player.followers >= 50000 && player.coreFans < 500) score += 40;
+      break;
+
+    case 'CONTENT_PRISON':
+      if (completedArcIds.includes('ARC_CREATOR_BURNOUT')) score += 70;
+      if (player.burnout >= 70 && player.followers >= 30000) score += 50;
+      if (player.stability < 30 && player.followers >= 30000) score += 40;
+      break;
+
+    case 'DIY_PIONEER':
+      if (completedArcIds.includes('ARC_DIY_PATRON')) score += 80;
+      if (!player.flags.hasLabelDeal && player.coreFans >= 2000) score += 50;
+      if (player.coreFans >= 3000 && player.money >= 10000) score += 40;
+      break;
+
+    case 'VIRAL_GHOST':
+      if (completedArcIds.includes('ARC_VIRAL_ONE_HIT')) score += 50;
+      if (player.followers >= 50000 && player.algoBoost < 20) score += 50;
+      if (player.followers >= 100000 && player.coreFans < 500) score += 60;
       break;
   }
 
@@ -443,6 +623,63 @@ function generateCallbacks(state: GameState): EndingCallback[] {
     });
   }
 
+  // Digital Era Arc callbacks
+  if (completedArcIds.includes('ARC_VIRAL_ONE_HIT')) {
+    if (player.coreFans >= 1000) {
+      callbacks.push({
+        text: 'That viral moment was just the beginning. You turned 15 minutes of fame into something real.',
+        type: 'arc',
+      });
+    } else {
+      callbacks.push({
+        text: 'You went viral once. The clip still pops up sometimes. A ghost of what could have been.',
+        type: 'arc',
+      });
+    }
+  }
+
+  if (completedArcIds.includes('ARC_CANCEL')) {
+    if (player.stability >= 50) {
+      callbacks.push({
+        text: 'The internet tried to end you. You\'re still here. Scarred, maybe, but standing.',
+        type: 'arc',
+      });
+    } else {
+      callbacks.push({
+        text: 'The cancellation left marks. Not on your career - on your soul.',
+        type: 'arc',
+      });
+    }
+  }
+
+  if (completedArcIds.includes('ARC_CREATOR_BURNOUT')) {
+    if (player.burnout < 50) {
+      callbacks.push({
+        text: 'You learned to stop. To rest. To make music because you wanted to, not because the algorithm demanded it.',
+        type: 'arc',
+      });
+    } else {
+      callbacks.push({
+        text: 'The content machine never stops. Neither did you. Look where that got you.',
+        type: 'arc',
+      });
+    }
+  }
+
+  if (completedArcIds.includes('ARC_DIY_PATRON')) {
+    callbacks.push({
+      text: 'You built something direct. No middlemen, no gatekeepers. Just you and your people.',
+      type: 'arc',
+    });
+  }
+
+  if (completedArcIds.includes('ARC_PLATFORM_DEPENDENCY')) {
+    callbacks.push({
+      text: 'The algorithm taught you a lesson: build on rented land, lose it all when the landlord changes the rules.',
+      type: 'arc',
+    });
+  }
+
   // Event callbacks
   if (triggeredEventIds.includes('EV_MEMBER_OVERDOSE')) {
     const deadMember = bandmates.find(b => b.status === 'dead');
@@ -470,9 +707,10 @@ function generateCallbacks(state: GameState): EndingCallback[] {
     });
   }
 
-  if (player.fans >= 100000) {
+  const totalFans = getTotalFans(player);
+  if (totalFans >= 100000) {
     callbacks.push({
-      text: `${player.fans.toLocaleString()} people know your name. That\'s a small city.`,
+      text: `${totalFans.toLocaleString()} people know your name. That\'s a small city.`,
       type: 'achievement',
     });
   }
@@ -529,6 +767,15 @@ export function getEndingColor(endingId: EndingId): string {
       return 'text-green-500'; // Money green
     case 'COMEBACK_KID':
       return 'text-cyan-400'; // Phoenix blue
+    // Digital Era Endings
+    case 'ALGORITHM_CASUALTY':
+      return 'text-pink-400'; // Algo pink
+    case 'CONTENT_PRISON':
+      return 'text-red-400'; // Warning red
+    case 'DIY_PIONEER':
+      return 'text-emerald-400'; // Independent green
+    case 'VIRAL_GHOST':
+      return 'text-slate-400'; // Ghost gray
     default:
       return 'text-white';
   }
@@ -557,6 +804,15 @@ export function getEndingIcon(endingId: EndingId): string {
       return '💰';
     case 'COMEBACK_KID':
       return '🦅';
+    // Digital Era Endings
+    case 'ALGORITHM_CASUALTY':
+      return '📉';
+    case 'CONTENT_PRISON':
+      return '📱';
+    case 'DIY_PIONEER':
+      return '🛠️';
+    case 'VIRAL_GHOST':
+      return '👻';
     default:
       return '🎵';
   }

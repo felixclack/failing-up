@@ -85,7 +85,7 @@ describe('arcs', () => {
   describe('canEnterArc', () => {
     it('returns true when entry conditions are met', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 1500;
+      state.player.coreFans = 1500;
       state.player.hype = 60;
 
       expect(canEnterArc(testArc, state)).toBe(true);
@@ -93,7 +93,7 @@ describe('arcs', () => {
 
     it('returns false when entry conditions are not met', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 500; // Below minimum
+      state.player.coreFans = 500; // Below minimum
       state.player.hype = 60;
 
       expect(canEnterArc(testArc, state)).toBe(false);
@@ -101,7 +101,7 @@ describe('arcs', () => {
 
     it('returns false when arc is already active', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 1500;
+      state.player.coreFans = 1500;
       state.player.hype = 60;
       state.activeArcs = [{ ...testArc }];
 
@@ -110,7 +110,7 @@ describe('arcs', () => {
 
     it('returns false when arc is already completed', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 1500;
+      state.player.coreFans = 1500;
       state.player.hype = 60;
       state.completedArcIds = ['TEST_ARC'];
 
@@ -121,7 +121,7 @@ describe('arcs', () => {
   describe('shouldAdvanceArcStage', () => {
     it('returns true when advancement conditions are met', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 2500;
+      state.player.coreFans = 2500;
 
       const arc = { ...testArc, currentStage: 0 };
 
@@ -130,7 +130,7 @@ describe('arcs', () => {
 
     it('returns false when advancement conditions are not met', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 1500; // Below advancement threshold
+      state.player.coreFans = 1500; // Below advancement threshold
 
       const arc = { ...testArc, currentStage: 0 };
 
@@ -139,7 +139,7 @@ describe('arcs', () => {
 
     it('returns false when at final stage', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 10000;
+      state.player.coreFans = 10000;
 
       const arc = { ...testArc, currentStage: 3 }; // Past final stage
 
@@ -148,7 +148,7 @@ describe('arcs', () => {
 
     it('returns false when no advancement conditions defined', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 10000;
+      state.player.coreFans = 10000;
 
       const arc = { ...testArc, currentStage: 2 }; // Stage 2 has no advancement conditions
 
@@ -308,7 +308,7 @@ describe('arcs', () => {
   describe('checkAndActivateArcs', () => {
     it('activates arcs that meet entry conditions', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 1500;
+      state.player.coreFans = 1500;
       state.player.hype = 60;
 
       const newState = checkAndActivateArcs(state, [testArc]);
@@ -319,7 +319,7 @@ describe('arcs', () => {
 
     it('does not activate arcs that do not meet conditions', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 100; // Below threshold
+      state.player.coreFans = 100; // Below threshold
 
       const newState = checkAndActivateArcs(state, [testArc]);
 
@@ -330,7 +330,7 @@ describe('arcs', () => {
   describe('checkAndAdvanceArcs', () => {
     it('advances arcs that meet advancement conditions', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 3000; // Above stage 0 advancement threshold
+      state.player.coreFans = 3000; // Above stage 0 advancement threshold
       state.activeArcs = [{ ...testArc, currentStage: 0 }];
 
       const newState = checkAndAdvanceArcs(state);
@@ -340,7 +340,7 @@ describe('arcs', () => {
 
     it('does not advance arcs that do not meet conditions', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 1500; // Below advancement threshold
+      state.player.coreFans = 1500; // Below advancement threshold
       state.activeArcs = [{ ...testArc, currentStage: 0 }];
 
       const newState = checkAndAdvanceArcs(state);
@@ -434,7 +434,7 @@ describe('arcs', () => {
   describe('Label Deal Arc', () => {
     it('can be entered when conditions are met', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 6000;
+      state.player.coreFans = 6000;
       state.player.hype = 50;
       state.player.industryGoodwill = 35;
       state.player.flags.hasLabelDeal = false;
@@ -444,7 +444,7 @@ describe('arcs', () => {
 
     it('cannot be entered if already has label deal', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 6000;
+      state.player.coreFans = 6000;
       state.player.hype = 50;
       state.player.industryGoodwill = 35;
       state.player.flags.hasLabelDeal = true;
@@ -528,7 +528,7 @@ describe('arcs', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
       state.week = 200; // 4 years in
       state.player.hype = 20; // Low hype
-      state.player.fans = 8000; // Had some success
+      state.player.coreFans = 8000; // Had some success
 
       expect(canEnterArc(COMEBACK_ARC, state)).toBe(true);
     });
@@ -537,7 +537,7 @@ describe('arcs', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
       state.week = 50; // Only 1 year in
       state.player.hype = 20;
-      state.player.fans = 8000;
+      state.player.coreFans = 8000;
 
       expect(canEnterArc(COMEBACK_ARC, state)).toBe(false);
     });
@@ -546,7 +546,7 @@ describe('arcs', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
       state.week = 200;
       state.player.hype = 50; // Still has buzz
-      state.player.fans = 8000;
+      state.player.coreFans = 8000;
 
       expect(canEnterArc(COMEBACK_ARC, state)).toBe(false);
     });
@@ -555,7 +555,7 @@ describe('arcs', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
       state.week = 200;
       state.player.hype = 20;
-      state.player.fans = 500; // Never made it
+      state.player.coreFans = 500; // Never made it
 
       expect(canEnterArc(COMEBACK_ARC, state)).toBe(false);
     });
@@ -591,13 +591,20 @@ describe('arcs', () => {
       }
     });
 
-    it('ALL_ARCS contains all 5 arcs', () => {
-      expect(ALL_ARCS).toHaveLength(5);
+    it('ALL_ARCS contains all 10 arcs (5 classic + 5 streaming era)', () => {
+      expect(ALL_ARCS).toHaveLength(10);
+      // Classic arcs
       expect(ALL_ARCS.map(a => a.id)).toContain('ARC_ADDICTION');
       expect(ALL_ARCS.map(a => a.id)).toContain('ARC_LABEL_DEAL');
       expect(ALL_ARCS.map(a => a.id)).toContain('ARC_BAND_BREAKUP');
       expect(ALL_ARCS.map(a => a.id)).toContain('ARC_SELLOUT');
       expect(ALL_ARCS.map(a => a.id)).toContain('ARC_COMEBACK');
+      // Streaming era arcs
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_VIRAL_ONE_HIT');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_CANCEL');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_CREATOR_BURNOUT');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_DIY_PATRON');
+      expect(ALL_ARCS.map(a => a.id)).toContain('ARC_PLATFORM_DEPENDENCY');
     });
   });
 });

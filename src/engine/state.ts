@@ -124,7 +124,6 @@ export const STARTING_STATS = {
   talent: { min: 20, max: 60 },
   skill: { min: 10, max: 30 },
   image: { min: 20, max: 50 },
-  fans: { min: 0, max: 100 },
   hype: { min: 5, max: 20 },
   money: { min: 200, max: 500 },
   health: { min: 80, max: 100 },
@@ -133,6 +132,13 @@ export const STARTING_STATS = {
   addiction: { min: 0, max: 5 },
   industryGoodwill: { min: 0, max: 10 },
   burnout: { min: 0, max: 10 },
+  // Streaming era audience stats
+  coreFans: { min: 0, max: 50 },        // Start with handful of core fans
+  casualListeners: { min: 0, max: 100 }, // Small streaming presence
+  // Digital/social stats
+  followers: { min: 50, max: 500 },     // Small social following
+  algoBoost: { min: 0, max: 10 },       // Platforms don't know you yet
+  cataloguePower: { min: 0, max: 0 },   // No catalogue to start
 };
 
 // =============================================================================
@@ -187,17 +193,31 @@ export function createPlayer(
     talent: talent ?? rng.nextInt(STARTING_STATS.talent.min, STARTING_STATS.talent.max),
     skill: rng.nextInt(STARTING_STATS.skill.min, STARTING_STATS.skill.max),
     image: rng.nextInt(STARTING_STATS.image.min, STARTING_STATS.image.max),
-    fans: rng.nextInt(STARTING_STATS.fans.min, STARTING_STATS.fans.max),
     hype: rng.nextInt(STARTING_STATS.hype.min, STARTING_STATS.hype.max),
     money,
     health,
     stability,
     cred: rng.nextInt(STARTING_STATS.cred.min, STARTING_STATS.cred.max),
+    // Audience stats (streaming era)
+    coreFans: rng.nextInt(STARTING_STATS.coreFans.min, STARTING_STATS.coreFans.max),
+    casualListeners: rng.nextInt(STARTING_STATS.casualListeners.min, STARTING_STATS.casualListeners.max),
+    // Digital/social stats
+    followers: rng.nextInt(STARTING_STATS.followers.min, STARTING_STATS.followers.max),
+    algoBoost: rng.nextInt(STARTING_STATS.algoBoost.min, STARTING_STATS.algoBoost.max),
+    cataloguePower: STARTING_STATS.cataloguePower.min, // Always start at 0
+    // Hidden stats
     addiction: rng.nextInt(STARTING_STATS.addiction.min, STARTING_STATS.addiction.max),
     industryGoodwill: rng.nextInt(STARTING_STATS.industryGoodwill.min, STARTING_STATS.industryGoodwill.max),
     burnout: rng.nextInt(STARTING_STATS.burnout.min, STARTING_STATS.burnout.max),
     flags: createDefaultFlags(),
   };
+}
+
+/**
+ * Get total fans (coreFans + casualListeners)
+ */
+export function getTotalFans(player: Player): number {
+  return player.coreFans + player.casualListeners;
 }
 
 // =============================================================================
@@ -358,9 +378,13 @@ export function clampStat(value: number, min = STAT_MIN, max = STAT_MAX): number
 /**
  * Apply stat deltas to a player, returning new player object
  * Money is not clamped (can go negative)
- * Fans are not clamped (can grow indefinitely)
+ * Audience stats (coreFans, casualListeners) are not clamped (can grow indefinitely)
+ * Legacy 'fans' delta is distributed to coreFans for backward compatibility
  */
 export function applyStatDeltas(player: Player, deltas: StatDeltas): Player {
+  // Handle legacy 'fans' delta by adding to coreFans
+  const coreFansFromLegacy = deltas.fans ?? 0;
+
   return {
     ...player,
     talent: deltas.talent !== undefined
@@ -372,9 +396,6 @@ export function applyStatDeltas(player: Player, deltas: StatDeltas): Player {
     image: deltas.image !== undefined
       ? clampStat(player.image + deltas.image)
       : player.image,
-    fans: deltas.fans !== undefined
-      ? Math.max(0, player.fans + deltas.fans)
-      : player.fans,
     hype: deltas.hype !== undefined
       ? clampStat(player.hype + deltas.hype)
       : player.hype,
@@ -390,6 +411,24 @@ export function applyStatDeltas(player: Player, deltas: StatDeltas): Player {
     cred: deltas.cred !== undefined
       ? clampStat(player.cred + deltas.cred)
       : player.cred,
+    // Audience stats (streaming era)
+    coreFans: deltas.coreFans !== undefined || coreFansFromLegacy !== 0
+      ? Math.max(0, player.coreFans + (deltas.coreFans ?? 0) + coreFansFromLegacy)
+      : player.coreFans,
+    casualListeners: deltas.casualListeners !== undefined
+      ? Math.max(0, player.casualListeners + deltas.casualListeners)
+      : player.casualListeners,
+    // Digital/social stats
+    followers: deltas.followers !== undefined
+      ? Math.max(0, player.followers + deltas.followers)
+      : player.followers,
+    algoBoost: deltas.algoBoost !== undefined
+      ? clampStat(player.algoBoost + deltas.algoBoost)
+      : player.algoBoost,
+    cataloguePower: deltas.cataloguePower !== undefined
+      ? clampStat(player.cataloguePower + deltas.cataloguePower)
+      : player.cataloguePower,
+    // Hidden stats
     addiction: deltas.addiction !== undefined
       ? clampStat(player.addiction + deltas.addiction)
       : player.addiction,

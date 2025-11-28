@@ -72,7 +72,7 @@ describe('events', () => {
   describe('checkTriggerConditions', () => {
     it('returns true when all conditions met', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 200;
+      state.player.coreFans = 200;
       state.player.money = 300;
 
       const result = checkTriggerConditions(testEvent.triggerConditions, state);
@@ -81,7 +81,8 @@ describe('events', () => {
 
     it('returns false when minFans not met', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 50; // Below 100
+      state.player.coreFans = 50; // Below 100
+      state.player.casualListeners = 0; // Ensure total fans is below threshold
       state.player.money = 300;
 
       const result = checkTriggerConditions(testEvent.triggerConditions, state);
@@ -90,7 +91,7 @@ describe('events', () => {
 
     it('returns false when maxMoney exceeded', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 200;
+      state.player.coreFans = 200;
       state.player.money = 600; // Above 500
 
       const result = checkTriggerConditions(testEvent.triggerConditions, state);
@@ -123,7 +124,7 @@ describe('events', () => {
   describe('isEventEligible', () => {
     it('returns true for eligible event', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 200;
+      state.player.coreFans = 200;
       state.player.money = 300;
 
       expect(isEventEligible(testEvent, state)).toBe(true);
@@ -147,7 +148,7 @@ describe('events', () => {
   describe('getEligibleEvents', () => {
     it('filters to only eligible events', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 200;
+      state.player.coreFans = 200;
       state.player.money = 300;
 
       const allEvents = [testEvent, oneTimeEvent, actionSpecificEvent];
@@ -160,7 +161,7 @@ describe('events', () => {
 
     it('excludes triggered one-time events', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.fans = 200;
+      state.player.coreFans = 200;
       state.player.money = 300;
       state.triggeredEventIds = ['ONE_TIME_EVENT'];
 

@@ -6,6 +6,7 @@
  */
 
 import { Arc, GameEvent } from '@/engine/types';
+import { ALL_STREAMING_ARCS, ALL_STREAMING_ARC_EVENTS } from './streamingArcs';
 
 // =============================================================================
 // Addiction Arc
@@ -1031,6 +1032,7 @@ export const ALL_ARCS: Arc[] = [
   BAND_BREAKUP_ARC,
   SELLOUT_ARC,
   COMEBACK_ARC,
+  ...ALL_STREAMING_ARCS,
 ];
 
 // All arc-specific events combined
@@ -1040,4 +1042,5 @@ export const ALL_ARC_EVENTS: GameEvent[] = [
   ...bandBreakupArcEvents,
   ...selloutArcEvents,
   ...comebackArcEvents,
+  ...ALL_STREAMING_ARC_EVENTS,
 ];

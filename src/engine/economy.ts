@@ -9,20 +9,42 @@ import {
   Song,
   SalesTier,
   CreativeControl,
+  DealType,
 } from './types';
 import { RandomGenerator } from './random';
+import { getTotalFans } from './state';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-// Label deal generation
+// Label deal generation - modern deal structures
 export const LABEL_TIERS = {
+  // Distribution deals - you keep masters, high royalty, but low/no advance
+  distro: {
+    name: 'Distribution Deal',
+    advanceRange: [0, 500],
+    royaltyRange: [0.70, 0.85], // Much higher royalty
+    streamingRoyaltyRange: [0.70, 0.85],
+    creativeControl: 'high' as CreativeControl,
+    dealType: 'distro' as DealType,
+    includesMasters: false,
+    includesMerch: false,
+    includesTouring: false,
+    minFans: 200,
+    minIndustryGoodwill: 5,
+    minFollowers: 1000, // Need some online presence
+  },
   indie: {
     name: 'Small Indie',
     advanceRange: [500, 2000],
     royaltyRange: [0.15, 0.25],
+    streamingRoyaltyRange: [0.20, 0.30],
     creativeControl: 'high' as CreativeControl,
+    dealType: 'traditional' as DealType,
+    includesMasters: true,
+    includesMerch: false,
+    includesTouring: false,
     minFans: 500,
     minIndustryGoodwill: 10,
   },
@@ -30,7 +52,12 @@ export const LABEL_TIERS = {
     name: 'Mid-Size Label',
     advanceRange: [5000, 15000],
     royaltyRange: [0.10, 0.18],
+    streamingRoyaltyRange: [0.15, 0.22],
     creativeControl: 'medium' as CreativeControl,
+    dealType: 'traditional' as DealType,
+    includesMasters: true,
+    includesMerch: false,
+    includesTouring: false,
     minFans: 5000,
     minIndustryGoodwill: 30,
   },
@@ -38,9 +65,31 @@ export const LABEL_TIERS = {
     name: 'Major Label',
     advanceRange: [25000, 100000],
     royaltyRange: [0.08, 0.15],
+    streamingRoyaltyRange: [0.10, 0.18],
     creativeControl: 'low' as CreativeControl,
+    dealType: 'traditional' as DealType,
+    includesMasters: true,
+    includesMerch: false,
+    includesTouring: false,
     minFans: 25000,
     minIndustryGoodwill: 50,
+  },
+  // 360 deals - big advance but they take a cut of everything
+  major360: {
+    name: 'Major Label (360)',
+    advanceRange: [50000, 200000],
+    royaltyRange: [0.12, 0.18],
+    streamingRoyaltyRange: [0.12, 0.20],
+    creativeControl: 'low' as CreativeControl,
+    dealType: '360' as DealType,
+    includesMasters: true,
+    includesMerch: true,
+    includesTouring: true,
+    merchCutRange: [0.20, 0.30],
+    touringCutRange: [0.10, 0.20],
+    minFans: 50000,
+    minIndustryGoodwill: 60,
+    minFollowers: 50000,
   },
 };
 
@@ -72,43 +121,90 @@ export const MERCH_PROFIT_PER_FAN = 0.02; // $0.02 per fan per week on tour
 
 /**
  * Generate a label deal offer based on player stats
+ * Returns different deal types based on player profile
  */
 export function generateLabelOffer(
   state: GameState,
-  rng: RandomGenerator
+  rng: RandomGenerator,
+  preferredType?: DealType
 ): LabelDeal | null {
   const { player } = state;
+  const totalFans = getTotalFans(player);
 
-  // Check which tier player qualifies for
-  let eligibleTier: keyof typeof LABEL_TIERS | null = null;
+  // Check which tiers player qualifies for
+  const eligibleTiers: (keyof typeof LABEL_TIERS)[] = [];
 
-  if (player.fans >= LABEL_TIERS.major.minFans &&
+  // Check each tier's requirements
+  if (totalFans >= LABEL_TIERS.major360.minFans &&
+      player.industryGoodwill >= LABEL_TIERS.major360.minIndustryGoodwill &&
+      player.followers >= (LABEL_TIERS.major360.minFollowers || 0)) {
+    eligibleTiers.push('major360');
+  }
+  if (totalFans >= LABEL_TIERS.major.minFans &&
       player.industryGoodwill >= LABEL_TIERS.major.minIndustryGoodwill) {
-    eligibleTier = 'major';
-  } else if (player.fans >= LABEL_TIERS.mid.minFans &&
-             player.industryGoodwill >= LABEL_TIERS.mid.minIndustryGoodwill) {
-    eligibleTier = 'mid';
-  } else if (player.fans >= LABEL_TIERS.indie.minFans &&
-             player.industryGoodwill >= LABEL_TIERS.indie.minIndustryGoodwill) {
-    eligibleTier = 'indie';
+    eligibleTiers.push('major');
+  }
+  if (totalFans >= LABEL_TIERS.mid.minFans &&
+      player.industryGoodwill >= LABEL_TIERS.mid.minIndustryGoodwill) {
+    eligibleTiers.push('mid');
+  }
+  if (totalFans >= LABEL_TIERS.indie.minFans &&
+      player.industryGoodwill >= LABEL_TIERS.indie.minIndustryGoodwill) {
+    eligibleTiers.push('indie');
+  }
+  // Distro deals are accessible with lower requirements but need followers
+  if (totalFans >= LABEL_TIERS.distro.minFans &&
+      player.industryGoodwill >= LABEL_TIERS.distro.minIndustryGoodwill &&
+      player.followers >= (LABEL_TIERS.distro.minFollowers || 0)) {
+    eligibleTiers.push('distro');
   }
 
-  if (!eligibleTier) return null;
+  if (eligibleTiers.length === 0) return null;
 
-  const tier = LABEL_TIERS[eligibleTier];
+  // Select tier - prefer higher tiers but allow some randomness
+  let selectedTier: keyof typeof LABEL_TIERS;
+
+  if (preferredType) {
+    // If user has a preference, try to match deal type
+    const matchingTiers = eligibleTiers.filter(t => LABEL_TIERS[t].dealType === preferredType);
+    selectedTier = matchingTiers.length > 0
+      ? matchingTiers[0]
+      : eligibleTiers[0];
+  } else {
+    // Default: pick best available tier (first in list since we checked in order)
+    selectedTier = eligibleTiers[0];
+  }
+
+  const tier = LABEL_TIERS[selectedTier];
 
   // Generate deal terms
   const advance = rng.nextInt(tier.advanceRange[0], tier.advanceRange[1]);
   const royaltyRate = rng.nextFloat(tier.royaltyRange[0], tier.royaltyRange[1]);
+  const streamingRoyaltyRate = rng.nextFloat(
+    tier.streamingRoyaltyRange[0],
+    tier.streamingRoyaltyRange[1]
+  );
 
-  // Label names
+  // Generate merch and touring cuts for 360 deals
+  let merchCut = 0;
+  let touringCut = 0;
+  if ('merchCutRange' in tier && tier.includesMerch) {
+    merchCut = rng.nextFloat(tier.merchCutRange[0], tier.merchCutRange[1]);
+  }
+  if ('touringCutRange' in tier && tier.includesTouring) {
+    touringCut = rng.nextFloat(tier.touringCutRange[0], tier.touringCutRange[1]);
+  }
+
+  // Label names by tier
   const labelNames: Record<string, string[]> = {
+    distro: ['DistroKid Pro', 'TuneCore Select', 'CD Baby Plus', 'AWAL'],
     indie: ['Rust Records', 'Basement Tapes', 'Electric Funeral', 'Dead Wax'],
     mid: ['Chrome Records', 'Velocity Music', 'Soundstage', 'Amplifier Records'],
     major: ['Titan Records', 'Global Sound', 'Megaphone Entertainment', 'Universal Groove'],
+    major360: ['Titan 360', 'Global Entertainment Group', 'Megaphone Worldwide', 'Universal Empire'],
   };
 
-  const names = labelNames[eligibleTier];
+  const names = labelNames[selectedTier] || labelNames.indie;
   const name = names[rng.nextInt(0, names.length - 1)];
 
   return {
@@ -117,9 +213,16 @@ export function generateLabelOffer(
     advance,
     recoupDebt: advance, // Start with full advance as debt
     royaltyRate: Math.round(royaltyRate * 100) / 100,
+    streamingRoyaltyRate: Math.round(streamingRoyaltyRate * 100) / 100,
     creativeControl: tier.creativeControl,
     status: 'active',
     weekSigned: state.week,
+    dealType: tier.dealType,
+    includesMasters: tier.includesMasters,
+    includesMerch: tier.includesMerch,
+    includesTouring: tier.includesTouring,
+    merchCut: Math.round(merchCut * 100) / 100,
+    touringCut: Math.round(touringCut * 100) / 100,
   };
 }
 
@@ -316,7 +419,7 @@ export function createAlbum(
 
   const salesTier = determineSalesTier(
     reception,
-    state.player.fans,
+    getTotalFans(state.player),
     0, // Initial promotion
     labelId !== null,
     rng
@@ -363,12 +466,22 @@ export function createAlbum(
 // =============================================================================
 
 /**
+ * Get the active 360 deal if one exists
+ */
+export function getActive360Deal(state: GameState): LabelDeal | null {
+  return state.labelDeals.find(d =>
+    d.status === 'active' && d.dealType === '360'
+  ) || null;
+}
+
+/**
  * Calculate tour finances for a week
+ * Now factors in 360 deal cuts on touring and merch
  */
 export function calculateTourWeek(
   state: GameState,
   rng: RandomGenerator
-): { revenue: number; costs: number; fansGained: number; hypeGain: number } {
+): { revenue: number; costs: number; fansGained: number; hypeGain: number; labelCut: number } {
   const { player, bandmates } = state;
 
   // Calculate costs
@@ -381,7 +494,8 @@ export function calculateTourWeek(
 
   // Calculate revenue
   // Guarantee scales with fans and hype
-  const fanMultiplier = Math.log10(Math.max(100, player.fans)) / 2;
+  const totalFans = getTotalFans(player);
+  const fanMultiplier = Math.log10(Math.max(100, totalFans)) / 2;
   const hypeMultiplier = 1 + (player.hype / 100);
   const showGuarantee = Math.floor(TOUR_BASE_GUARANTEE * fanMultiplier * hypeMultiplier);
 
@@ -389,10 +503,32 @@ export function calculateTourWeek(
   const showsPerWeek = 4;
   const guaranteeRevenue = showGuarantee * showsPerWeek;
 
-  // Merch revenue
-  const merchRevenue = Math.floor(player.fans * MERCH_PROFIT_PER_FAN);
+  // Merch revenue - only core fans really buy merch
+  const grossMerchRevenue = Math.floor(player.coreFans * MERCH_PROFIT_PER_FAN);
 
-  const totalRevenue = guaranteeRevenue + merchRevenue;
+  // Check for 360 deal cuts
+  const deal360 = getActive360Deal(state);
+  let labelCut = 0;
+  let netMerchRevenue = grossMerchRevenue;
+  let netTouringRevenue = guaranteeRevenue;
+
+  if (deal360) {
+    // Apply merch cut if 360 deal includes merch
+    if (deal360.includesMerch && deal360.merchCut > 0) {
+      const merchLabelCut = Math.floor(grossMerchRevenue * deal360.merchCut);
+      netMerchRevenue = grossMerchRevenue - merchLabelCut;
+      labelCut += merchLabelCut;
+    }
+
+    // Apply touring cut if 360 deal includes touring
+    if (deal360.includesTouring && deal360.touringCut > 0) {
+      const touringLabelCut = Math.floor(guaranteeRevenue * deal360.touringCut);
+      netTouringRevenue = guaranteeRevenue - touringLabelCut;
+      labelCut += touringLabelCut;
+    }
+  }
+
+  const totalRevenue = netTouringRevenue + netMerchRevenue;
 
   // Fans gained on tour
   const baseFansGained = Math.floor(player.hype * 2 + rng.nextInt(10, 50));
@@ -406,6 +542,7 @@ export function calculateTourWeek(
     costs: totalCosts,
     fansGained,
     hypeGain,
+    labelCut,
   };
 }
 
@@ -421,8 +558,9 @@ export function calculateGigPayout(
   // Base payout from door
   const baseDoor = 50;
 
-  // Turnout based on local hype and fans
-  const localFanBase = Math.min(500, player.fans);
+  // Turnout based on local hype and fans - core fans are more likely to attend local shows
+  const totalFans = getTotalFans(player);
+  const localFanBase = Math.min(500, totalFans);
   const turnoutPercent = (player.hype / 100) * rng.nextFloat(0.5, 1.0);
   const turnout = Math.floor(localFanBase * turnoutPercent) + rng.nextInt(10, 30);
 
@@ -436,6 +574,95 @@ export function calculateGigPayout(
   const fansGained = Math.floor(turnout * 0.1 * (player.skill / 50));
 
   return { payout, fansGained };
+}
+
+// =============================================================================
+// Streaming Economy
+// =============================================================================
+
+/**
+ * Get the effective streaming royalty rate based on label deal
+ * DIY artists get 100%, distro deals get 70-85%, labels take bigger cuts
+ */
+export function getStreamingRoyaltyRate(state: GameState): number {
+  // Find active label deal
+  const activeDeal = state.labelDeals.find(d => d.status === 'active');
+
+  if (!activeDeal) {
+    // No deal = DIY = 100% (but harder to get on playlists)
+    return 1.0;
+  }
+
+  // Use the deal's streaming royalty rate
+  return activeDeal.streamingRoyaltyRate;
+}
+
+/**
+ * Calculate streaming income after deal cuts and recoupment
+ * Returns: { grossIncome, netIncome, recoupPaid, labelCut }
+ */
+export function calculateStreamingIncomeAfterDeal(
+  grossStreamingIncome: number,
+  state: GameState
+): { grossIncome: number; netIncome: number; recoupPaid: number; labelCut: number } {
+  const activeDeal = state.labelDeals.find(d => d.status === 'active');
+
+  if (!activeDeal) {
+    // No deal = full income
+    return {
+      grossIncome: grossStreamingIncome,
+      netIncome: grossStreamingIncome,
+      recoupPaid: 0,
+      labelCut: 0,
+    };
+  }
+
+  // Apply streaming royalty rate
+  const labelCut = Math.floor(grossStreamingIncome * (1 - activeDeal.streamingRoyaltyRate));
+  let artistShare = grossStreamingIncome - labelCut;
+
+  // If still recouping, artist share goes toward debt first
+  let recoupPaid = 0;
+  if (activeDeal.recoupDebt > 0) {
+    recoupPaid = Math.min(artistShare, activeDeal.recoupDebt);
+    artistShare -= recoupPaid;
+  }
+
+  return {
+    grossIncome: grossStreamingIncome,
+    netIncome: artistShare,
+    recoupPaid,
+    labelCut,
+  };
+}
+
+/**
+ * Apply streaming income recoupment to deal debt
+ */
+export function applyStreamingRecoupment(
+  state: GameState,
+  recoupAmount: number
+): GameState {
+  if (recoupAmount <= 0) return state;
+
+  const dealIndex = state.labelDeals.findIndex(d => d.status === 'active');
+  if (dealIndex === -1) return state;
+
+  const deal = state.labelDeals[dealIndex];
+  if (deal.recoupDebt <= 0) return state;
+
+  const newRecoupDebt = Math.max(0, deal.recoupDebt - recoupAmount);
+
+  const updatedDeals = [...state.labelDeals];
+  updatedDeals[dealIndex] = {
+    ...deal,
+    recoupDebt: newRecoupDebt,
+  };
+
+  return {
+    ...state,
+    labelDeals: updatedDeals,
+  };
 }
 
 // =============================================================================

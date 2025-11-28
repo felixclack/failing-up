@@ -33,6 +33,18 @@ import {
   selectArcEvent,
 } from './arcs';
 import { ALL_ARCS } from '@/data/arcs';
+import {
+  calculateWeeklyStreamingIncome,
+  updateSongsWeekly,
+  applyAlgoBoostDecay,
+  updateCataloguePower,
+  updateCasualListenersFromStreaming,
+  releaseSingle,
+} from './streaming';
+import {
+  calculateStreamingIncomeAfterDeal,
+  applyStreamingRecoupment,
+} from './economy';
 
 // =============================================================================
 // Constants
@@ -163,9 +175,68 @@ function applyBurnoutEffects(state: GameState): GameState {
  */
 function applyEndOfWeekUpdates(state: GameState): GameState {
   let newState = state;
+
+  // Original stat updates
   newState = applyHypeDecay(newState);
   newState = applyAddictionEffects(newState);
   newState = applyBurnoutEffects(newState);
+
+  // Streaming era updates
+  newState = applyStreamingUpdates(newState);
+
+  return newState;
+}
+
+/**
+ * Apply weekly streaming updates: income, song stats, algo decay
+ * Now factors in label deal terms for income calculation
+ */
+function applyStreamingUpdates(state: GameState): GameState {
+  const rng = createRandom(state.seed + state.week + 1000); // Offset to not overlap with other RNG uses
+
+  // Calculate gross streaming income (before deal cuts)
+  const { income: grossIncome, totalStreams, songStreams } = calculateWeeklyStreamingIncome(
+    state.songs,
+    state.player,
+    rng,
+    1.0 // Pass full amount, deal cuts applied below
+  );
+
+  // Update songs with weekly streaming data
+  const updatedSongs = updateSongsWeekly(state.songs, songStreams, rng);
+
+  // Apply deal terms to streaming income (royalty rate, recoupment)
+  const { netIncome, recoupPaid } = calculateStreamingIncomeAfterDeal(grossIncome, state);
+
+  // Update player stats
+  let updatedPlayer = state.player;
+
+  // Add net streaming income (after label takes their cut)
+  if (netIncome > 0) {
+    updatedPlayer = { ...updatedPlayer, money: updatedPlayer.money + netIncome };
+  }
+
+  // Decay algo boost
+  updatedPlayer = applyAlgoBoostDecay(updatedPlayer);
+
+  // Update catalogue power
+  updatedPlayer = updateCataloguePower(updatedPlayer, updatedSongs);
+
+  // Convert some streams to casual listeners
+  updatedPlayer = updateCasualListenersFromStreaming(updatedPlayer, totalStreams);
+
+  // Start with updated state
+  let newState: GameState = {
+    ...state,
+    player: updatedPlayer,
+    songs: updatedSongs,
+  };
+
+  // Apply recoupment to deal debt if applicable
+  if (recoupPaid > 0) {
+    newState = applyStreamingRecoupment(newState, recoupPaid);
+  }
+
   return newState;
 }
 
@@ -252,23 +323,47 @@ export function processTurn(
 
     // If action produced a song, add it
     if (actionResult.producedSongId) {
-      const action = ACTIONS[actionId];
-      // Reconstruct the song from the action result
-      // In a real implementation, we'd pass the song object through
-      // For now, we'll create a placeholder that will be replaced with proper song handling
       const newSong: Song = {
         id: actionResult.producedSongId,
         title: actionResult.message.match(/"([^"]+)"/)?.[1] || 'Untitled',
-        quality: 50, // Will be properly set in full implementation
+        quality: 50,
         style: 'rock' as any,
         hitPotential: 30,
         writtenByPlayer: true,
         weekWritten: newState.week,
+        // Streaming fields - unreleased by default
+        isReleased: false,
+        isSingle: false,
+        weekReleased: null,
+        streamsTier: 'none',
+        playlistScore: 0,
+        viralFlag: false,
+        viralWeeksRemaining: 0,
+        totalStreams: 0,
       };
       newState = {
         ...newState,
         songs: [...newState.songs, newSong],
       };
+    }
+
+    // If action released a song as a single, update the song's streaming status
+    if (actionResult.releasedSongId) {
+      const songIndex = newState.songs.findIndex(s => s.id === actionResult.releasedSongId);
+      if (songIndex !== -1) {
+        const releasedSong = releaseSingle(
+          newState.songs[songIndex],
+          newState.player,
+          newState.week,
+          rng
+        );
+        const updatedSongs = [...newState.songs];
+        updatedSongs[songIndex] = releasedSong;
+        newState = {
+          ...newState,
+          songs: updatedSongs,
+        };
+      }
     }
   }
 
@@ -361,11 +456,39 @@ export function processTurnWithEvents(
         hitPotential: 30,
         writtenByPlayer: true,
         weekWritten: newState.week,
+        // Streaming fields - unreleased by default
+        isReleased: false,
+        isSingle: false,
+        weekReleased: null,
+        streamsTier: 'none',
+        playlistScore: 0,
+        viralFlag: false,
+        viralWeeksRemaining: 0,
+        totalStreams: 0,
       };
       newState = {
         ...newState,
         songs: [...newState.songs, newSong],
       };
+    }
+
+    // If action released a song as a single, update the song's streaming status
+    if (actionResult.releasedSongId) {
+      const songIndex = newState.songs.findIndex(s => s.id === actionResult.releasedSongId);
+      if (songIndex !== -1) {
+        const releasedSong = releaseSingle(
+          newState.songs[songIndex],
+          newState.player,
+          newState.week,
+          rng
+        );
+        const updatedSongs = [...newState.songs];
+        updatedSongs[songIndex] = releasedSong;
+        newState = {
+          ...newState,
+          songs: updatedSongs,
+        };
+      }
     }
   }
 

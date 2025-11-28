@@ -9,6 +9,7 @@ import {
   BandmateStatus,
 } from './types';
 import { RandomGenerator } from './random';
+import { getTotalFans } from './state';
 
 // =============================================================================
 // Constants
@@ -421,7 +422,7 @@ export function applyWeeklyLoyaltyChanges(state: GameState): GameState {
 
   // Success breeds loyalty
   if (player.hype >= 60) loyaltyDelta += 1;
-  if (player.fans >= 10000) loyaltyDelta += 1;
+  if (getTotalFans(player) >= 10000) loyaltyDelta += 1;
 
   // Money troubles hurt loyalty
   if (player.money < 0) loyaltyDelta -= 2;

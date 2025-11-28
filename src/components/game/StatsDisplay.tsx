@@ -81,17 +81,38 @@ function MoneyDisplay({ value }: { value: number }) {
   );
 }
 
-function FansDisplay({ value }: { value: number }) {
-  const formatted = value >= 1000000
-    ? `${(value / 1000000).toFixed(1)}M`
-    : value >= 1000
-      ? `${(value / 1000).toFixed(1)}K`
-      : value.toString();
+function formatNumber(value: number): string {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+  return value.toString();
+}
+
+function AudienceDisplay({ coreFans, casualListeners }: { coreFans: number; casualListeners: number }) {
+  const totalFans = coreFans + casualListeners;
 
   return (
     <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-      <div className="text-sm text-gray-400 mb-1">Fans</div>
-      <div className="text-2xl font-bold text-purple-400">{formatted}</div>
+      <div className="text-sm text-gray-400 mb-1">Audience</div>
+      <div className="text-2xl font-bold text-purple-400">{formatNumber(totalFans)}</div>
+      <div className="mt-1 text-xs space-y-0.5">
+        <div className="flex justify-between">
+          <span className="text-gray-500">Core Fans</span>
+          <span className="text-purple-300">{formatNumber(coreFans)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Casual</span>
+          <span className="text-purple-300">{formatNumber(casualListeners)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FollowersDisplay({ value }: { value: number }) {
+  return (
+    <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+      <div className="text-sm text-gray-400 mb-1">Followers</div>
+      <div className="text-2xl font-bold text-blue-400">{formatNumber(value)}</div>
     </div>
   );
 }
@@ -117,10 +138,22 @@ export function StatsDisplay({ player, week, year }: StatsDisplayProps) {
         <div className="text-sm text-gray-400">Talent: {player.talent}</div>
       </div>
 
-      {/* Money & Fans */}
+      {/* Money & Audience */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <MoneyDisplay value={player.money} />
-        <FansDisplay value={player.fans} />
+        <AudienceDisplay coreFans={player.coreFans} casualListeners={player.casualListeners} />
+      </div>
+
+      {/* Digital/Social Stats */}
+      <div className="mb-4 pb-4 border-b border-gray-700">
+        <div className="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+          Digital Presence
+        </div>
+        <div className="mb-2">
+          <FollowersDisplay value={player.followers} />
+        </div>
+        <StatBar label="Algo Boost" value={player.algoBoost} />
+        <StatBar label="Catalogue Power" value={player.cataloguePower} />
       </div>
 
       {/* Visible Stats */}

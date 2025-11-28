@@ -538,7 +538,7 @@ describe('band', () => {
     it('increases loyalty with high hype and fans', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
       state.player.hype = 70;
-      state.player.fans = 15000;
+      state.player.coreFans = 15000;
       state.bandmates = [
         { id: 'b1', name: 'A', role: 'guitar', talent: 50, reliability: 50, vice: 30, loyalty: 50, status: 'active' },
       ];

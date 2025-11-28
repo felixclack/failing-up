@@ -175,7 +175,7 @@ describe('turn', () => {
       const result2 = processTurn(state2, 'PLAY_LOCAL_GIG');
 
       expect(result1.newState.player.money).toBe(result2.newState.player.money);
-      expect(result1.newState.player.fans).toBe(result2.newState.player.fans);
+      expect(result1.newState.player.coreFans).toBe(result2.newState.player.coreFans);
       expect(result1.actionResult).toBe(result2.actionResult);
     });
   });

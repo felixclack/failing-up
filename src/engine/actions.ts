@@ -11,7 +11,7 @@ import {
   MusicStyle,
   StatDeltas,
 } from './types';
-import { applyStatDeltas, clampStat } from './state';
+import { applyStatDeltas, clampStat, getTotalFans } from './state';
 import { createRandom, RandomGenerator } from './random';
 import { getGigPayout, getFanGain } from './difficulty';
 
@@ -165,6 +165,38 @@ export const ACTIONS: Record<ActionId, Action> = {
     },
     hasSpecialLogic: false,
   },
+
+  // ==========================================================================
+  // Streaming Era Actions
+  // ==========================================================================
+
+  RELEASE_SINGLE: {
+    id: 'RELEASE_SINGLE',
+    label: 'Release Single',
+    description: 'Drop a single to streaming platforms. Builds momentum and streaming income.',
+    requirements: {
+      onTour: false,
+    },
+    baseEffects: {
+      hype: 3,
+      algoBoost: 2,
+      burnout: 1,
+    },
+    hasSpecialLogic: true, // Requires unreleased song, updates song streaming stats
+  },
+
+  POST_CONTENT: {
+    id: 'POST_CONTENT',
+    label: 'Post Content',
+    description: 'Social media posts, videos, and fan engagement. Builds following and can go viral.',
+    requirements: {},
+    baseEffects: {
+      followers: 50,
+      hype: 2,
+      burnout: 1,
+    },
+    hasSpecialLogic: true, // Small chance of viral, variable engagement
+  },
 };
 
 // =============================================================================
@@ -276,6 +308,15 @@ function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
       hitPotential,
       writtenByPlayer: true,
       weekWritten: state.week,
+      // Streaming fields - unreleased by default
+      isReleased: false,
+      isSingle: false,
+      weekReleased: null,
+      streamsTier: 'none',
+      playlistScore: 0,
+      viralFlag: false,
+      viralWeeksRemaining: 0,
+      totalStreams: 0,
     };
 
     return {
@@ -312,7 +353,8 @@ function executePlayLocalGig(state: GameState, rng: RandomGenerator): ActionResu
   const performance = clampStat(performanceBase + performanceRoll);
 
   // Determine turnout based on hype and local fans
-  const turnoutBase = Math.min(player.hype + Math.floor(player.fans / 100), 100);
+  const totalFans = getTotalFans(player);
+  const turnoutBase = Math.min(player.hype + Math.floor(totalFans / 100), 100);
   const turnoutRoll = rng.nextInt(-10, 10);
   const turnout = clampStat(turnoutBase + turnoutRoll);
 
@@ -385,6 +427,12 @@ export function executeAction(
     case 'PLAY_LOCAL_GIG':
       return executePlayLocalGig(state, rng);
 
+    case 'RELEASE_SINGLE':
+      return executeReleaseSingle(state, rng);
+
+    case 'POST_CONTENT':
+      return executePostContent(state, rng);
+
     // Actions without special logic just apply base effects
     default:
       return {
@@ -424,5 +472,108 @@ function getDefaultActionMessage(actionId: ActionId): string {
       return 'Made some industry connections. Could pay off later.';
     default:
       return 'Week complete.';
+  }
+}
+
+// =============================================================================
+// Streaming Era Action Execution
+// =============================================================================
+
+/**
+ * Execute RELEASE_SINGLE action
+ */
+function executeReleaseSingle(state: GameState, rng: RandomGenerator): ActionResult {
+  // Find unreleased songs
+  const unreleasedSongs = state.songs.filter(s => !s.isReleased);
+
+  if (unreleasedSongs.length === 0) {
+    return {
+      success: false,
+      message: 'No unreleased songs to drop as a single.',
+      statChanges: {},
+    };
+  }
+
+  // Pick the best unreleased song (by hit potential)
+  const sortedSongs = [...unreleasedSongs].sort((a, b) => b.hitPotential - a.hitPotential);
+  const song = sortedSongs[0];
+
+  // Calculate release tier based on player's digital presence
+  const baseScore = (song.quality + song.hitPotential) / 2;
+  const digitalBoost = (state.player.algoBoost + state.player.followers / 10000) / 2;
+  const totalScore = baseScore + digitalBoost + rng.nextInt(-10, 10);
+
+  let tierName: string;
+  if (totalScore >= 80) tierName = 'massive buzz';
+  else if (totalScore >= 60) tierName = 'strong start';
+  else if (totalScore >= 40) tierName = 'steady streams';
+  else tierName = 'quiet release';
+
+  // Stat gains scale with release quality
+  const hypeGain = Math.floor(3 + totalScore / 20);
+  const algoBoostGain = Math.floor(2 + totalScore / 30);
+  const casualListenersGain = Math.floor(totalScore * 5);
+
+  return {
+    success: true,
+    message: `Dropped "${song.title}" as a single - ${tierName}!`,
+    statChanges: {
+      ...ACTIONS.RELEASE_SINGLE.baseEffects,
+      hype: hypeGain,
+      algoBoost: algoBoostGain,
+      casualListeners: casualListenersGain,
+    },
+    releasedSongId: song.id, // Signal to update song's release status
+  };
+}
+
+/**
+ * Execute POST_CONTENT action
+ * Regular content posting with small viral chance
+ */
+function executePostContent(state: GameState, rng: RandomGenerator): ActionResult {
+  const baseEffects = { ...ACTIONS.POST_CONTENT.baseEffects };
+
+  // Small viral chance (5-12% based on algoBoost)
+  const viralChance = 0.05 + (state.player.algoBoost / 700);
+  const wentViral = rng.next() < viralChance;
+
+  if (wentViral) {
+    // Viral hit!
+    const viralFollowers = rng.nextInt(2000, 8000);
+    const viralCasualListeners = rng.nextInt(500, 2000);
+    const coreFansGain = rng.nextInt(20, 50);
+
+    return {
+      success: true,
+      message: 'Your post went viral! The algorithm blessed you this week.',
+      statChanges: {
+        ...baseEffects,
+        followers: viralFollowers,
+        casualListeners: viralCasualListeners,
+        coreFans: coreFansGain,
+        algoBoost: rng.nextInt(10, 20),
+        hype: rng.nextInt(5, 12),
+        burnout: 3, // Viral success still costs energy
+      },
+    };
+  } else {
+    // Normal week - steady small gains
+    const followers = rng.nextInt(30, 100);
+    const coreFansGain = rng.nextInt(5, 15);
+    const hype = rng.nextInt(1, 3);
+    const algoBoost = rng.nextInt(0, 3);
+
+    return {
+      success: true,
+      message: 'Posted content this week. Slow and steady.',
+      statChanges: {
+        ...baseEffects,
+        followers,
+        coreFans: coreFansGain,
+        hype,
+        algoBoost,
+      },
+    };
   }
 }

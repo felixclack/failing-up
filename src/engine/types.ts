@@ -15,9 +15,15 @@ export type MusicStyle = 'glam' | 'punk' | 'grunge' | 'alt' | 'metal' | 'indie';
 
 export type SalesTier = 'flop' | 'cult' | 'silver' | 'gold' | 'platinum' | 'diamond';
 
+// Streaming performance tiers for individual songs
+export type StreamsTier = 'none' | 'low' | 'medium' | 'high' | 'massive';
+
 export type CreativeControl = 'low' | 'medium' | 'high';
 
 export type LabelDealStatus = 'active' | 'dropped' | 'fulfilled';
+
+// Modern label deal types
+export type DealType = 'traditional' | 'distro' | '360';
 
 export type ActionId =
   | 'REST'
@@ -29,7 +35,10 @@ export type ActionId =
   | 'PROMOTE'
   | 'NETWORK'
   | 'PARTY'
-  | 'SIDE_JOB';
+  | 'SIDE_JOB'
+  // Streaming era actions
+  | 'RELEASE_SINGLE'
+  | 'POST_CONTENT';
 
 export type GameOverReason =
   | 'death'
@@ -92,12 +101,21 @@ export interface Player {
   talent: number;      // Mostly fixed, caps song quality
   skill: number;       // Performance and songwriting craft
   image: number;       // Perceived rockstar vibe
-  fans: number;        // Total audience (0 to millions)
   hype: number;        // Short-term buzz, decays weekly
   money: number;       // Cash on hand (can go negative)
   health: number;      // Physical health
   stability: number;   // Mental/emotional stability
   cred: number;        // Scene/critical respect
+
+  // Audience stats (streaming era split)
+  coreFans: number;        // Loyal fans who buy tickets/merch and stick around
+  casualListeners: number; // Passive streaming audience, big numbers but less loyalty
+  // Derived: fans = coreFans + casualListeners (computed when needed)
+
+  // Digital/Social stats
+  followers: number;       // Aggregate social media followers across platforms
+  algoBoost: number;       // 0-100, how much platforms currently "like" you
+  cataloguePower: number;  // 0-100, strength of back-catalog on streaming
 
   // Hidden/semi-hidden stats
   addiction: number;       // Substance abuse progression
@@ -126,6 +144,16 @@ export interface Song {
   hitPotential: number; // 0-100, derived from talent/skill/trend
   writtenByPlayer: boolean;
   weekWritten: number;  // When the song was created
+
+  // Streaming era fields
+  isReleased: boolean;          // Has the song been released to streaming?
+  isSingle: boolean;            // Released as a single (vs album track)?
+  weekReleased: number | null;  // When released to streaming
+  streamsTier: StreamsTier;     // Current streaming performance level
+  playlistScore: number;        // 0-100, algorithmic playlist placement score
+  viralFlag: boolean;           // Temporary viral boost active
+  viralWeeksRemaining: number;  // Weeks of viral boost left
+  totalStreams: number;         // Lifetime stream count
 }
 
 export interface Album {
@@ -145,10 +173,18 @@ export interface LabelDeal {
   name: string;           // Label name
   advance: number;        // Initial money given
   recoupDebt: number;     // Amount to recoup before royalties
-  royaltyRate: number;    // 0-1, fraction of sales
+  royaltyRate: number;    // 0-1, fraction of sales (album)
+  streamingRoyaltyRate: number; // 0-1, fraction of streaming revenue
   creativeControl: CreativeControl;
   status: LabelDealStatus;
   weekSigned: number;
+  // Modern deal structure
+  dealType: DealType;     // 'traditional' | 'distro' | '360'
+  includesMasters: boolean; // Does label own masters?
+  includesMerch: boolean;   // Does label take merch cut? (360 deals)
+  includesTouring: boolean; // Does label take touring cut? (360 deals)
+  merchCut: number;         // 0-1, fraction of merch (if includesMerch)
+  touringCut: number;       // 0-1, fraction of touring (if includesTouring)
 }
 
 // =============================================================================
@@ -159,7 +195,6 @@ export interface StatDeltas {
   talent?: number;
   skill?: number;
   image?: number;
-  fans?: number;
   hype?: number;
   money?: number;
   health?: number;
@@ -168,6 +203,15 @@ export interface StatDeltas {
   addiction?: number;
   industryGoodwill?: number;
   burnout?: number;
+  // Audience stats
+  coreFans?: number;
+  casualListeners?: number;
+  // Legacy: 'fans' is distributed to coreFans for backward compatibility
+  fans?: number;
+  // Digital stats
+  followers?: number;
+  algoBoost?: number;
+  cataloguePower?: number;
 }
 
 export interface ActionRequirements {
@@ -213,6 +257,14 @@ export interface EventTriggerConditions {
   minImage?: number;
   maxImage?: number;
   minSkill?: number;
+  // Streaming era conditions
+  minFollowers?: number;
+  maxFollowers?: number;
+  minCoreFans?: number;
+  minAlgoBoost?: number;
+  maxAlgoBoost?: number;
+  minCataloguePower?: number;
+  minReleasedSongs?: number;
   // Time requirements
   minWeek?: number;
   // Flag requirements
@@ -352,6 +404,8 @@ export interface ActionResult {
   producedAlbumId?: string;
   // Full song data when a song is produced (for naming flow)
   producedSong?: Song;
+  // For releasing an existing song as a single
+  releasedSongId?: string;
 }
 
 // =============================================================================

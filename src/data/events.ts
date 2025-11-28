@@ -8,6 +8,7 @@ import { labelEvents } from './labelEvents';
 import { bandEvents } from './bandEvents';
 import { ALL_ARC_EVENTS } from './arcs';
 import { ALL_ADDITIONAL_EVENTS } from './moreEvents';
+import { streamingEvents } from './streamingEvents';
 
 // =============================================================================
 // Band Conflict Events
@@ -521,6 +522,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...sceneEvents,
   ...labelEvents,
   ...bandEvents,
+  ...streamingEvents,
   ...ALL_ARC_EVENTS,
   ...ALL_ADDITIONAL_EVENTS,
 ];
@@ -534,4 +536,5 @@ export const EVENT_CATEGORIES = {
   scene: sceneEvents,
   label: labelEvents,
   band: bandEvents,
+  streaming: streamingEvents,
 };

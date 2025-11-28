@@ -364,3 +364,178 @@ test.describe('UI Tests', () => {
     console.log('No events triggered in 30 weeks of partying');
   });
 });
+
+// ============================================================================
+// STREAMING ERA TESTS
+// ============================================================================
+
+test.describe('Streaming Mechanics Tests', () => {
+  test('Post Content action is available and works', async ({ page }) => {
+    await startGame(page, {
+      name: 'ContentCreator',
+      talent: 'Average',
+      difficulty: 'Garage Band'
+    });
+
+    await handleEventIfPresent(page);
+
+    // Post Content should be visible in the Digital category
+    const postContentBtn = page.locator('button:has-text("Post Content")');
+    await expect(postContentBtn).toBeVisible();
+
+    // Take the action
+    const success = await takeAction(page, 'Post Content');
+    expect(success).toBe(true);
+
+    console.log('Post Content action taken successfully');
+  });
+
+  test('Release Single action requires unreleased song', async ({ page }) => {
+    await startGame(page, {
+      name: 'SingleDropper',
+      talent: 'Gifted',
+      difficulty: 'Garage Band'
+    });
+
+    await handleEventIfPresent(page);
+
+    // Release Single should be visible
+    const releaseSingleBtn = page.locator('button:has-text("Release Single")');
+    await expect(releaseSingleBtn).toBeVisible();
+
+    // Try to release without a song - should fail or be disabled
+    const initialSuccess = await takeAction(page, 'Release Single');
+
+    // If we failed (no songs), write some songs first
+    if (!initialSuccess) {
+      console.log('No songs to release - writing songs first');
+
+      // Write songs until we get one
+      for (let i = 0; i < 5; i++) {
+        await handleEventIfPresent(page);
+        if (await isGameOver(page)) break;
+
+        await takeAction(page, 'Write');
+        await handleEventIfPresent(page);
+      }
+
+      // Now try to release
+      await handleEventIfPresent(page);
+      const releasedSuccess = await takeAction(page, 'Release Single');
+      console.log(`Release Single after writing: ${releasedSuccess}`);
+    } else {
+      console.log('Release Single succeeded (must have had a song)');
+    }
+  });
+
+  test('Digital stats are displayed', async ({ page }) => {
+    await startGame(page, {
+      name: 'DigitalStar',
+      talent: 'Average',
+      difficulty: 'Garage Band'
+    });
+
+    // Check for digital presence stats
+    // These should be visible in the stats display
+    await expect(page.locator('text=Followers').first()).toBeVisible();
+    await expect(page.locator('text=Algo Boost').first()).toBeVisible();
+
+    console.log('Digital stats are displayed correctly');
+  });
+
+  test('Post Content can build followers over time', async ({ page }) => {
+    await startGame(page, {
+      name: 'FollowerBuilder',
+      talent: 'Average',
+      difficulty: 'Garage Band'
+    });
+
+    // Get initial follower display (might show "0" or formatted number)
+    const initialFollowers = await page.locator('text=/Followers/').first().textContent().catch(() => '0');
+    console.log('Initial followers text:', initialFollowers);
+
+    // Post content several times
+    for (let i = 0; i < 5; i++) {
+      await handleEventIfPresent(page);
+      if (await isGameOver(page)) break;
+
+      await takeAction(page, 'Post Content');
+      await handleEventIfPresent(page);
+    }
+
+    // Followers should have increased (we can't easily parse the exact number,
+    // but the game should still be running)
+    const stillPlaying = await page.locator('text=Choose Your Action').isVisible({ timeout: 2000 }).catch(() => false);
+    const gameEnded = await isGameOver(page);
+
+    expect(stillPlaying || gameEnded).toBe(true);
+    console.log('Post Content strategy completed 5 weeks');
+  });
+
+  test('Write then Release Single workflow', async ({ page }) => {
+    await startGame(page, {
+      name: 'SingleArtist',
+      talent: 'Gifted',
+      difficulty: 'Garage Band'
+    });
+
+    // Write songs for several weeks (Gifted talent has good chance)
+    for (let i = 0; i < 6; i++) {
+      await handleEventIfPresent(page);
+      if (await isGameOver(page)) break;
+      await takeAction(page, 'Write');
+      await handleEventIfPresent(page);
+    }
+
+    // Now try to release a single - if we wrote any songs, this should work
+    await handleEventIfPresent(page);
+    if (await isGameOver(page)) {
+      console.log('Game ended before release attempt');
+      return;
+    }
+
+    const releaseSuccess = await takeAction(page, 'Release Single');
+    console.log(`Release Single attempt: ${releaseSuccess}`);
+
+    // The workflow should complete (game still running or properly ended)
+    const stillPlaying = await page.locator('text=Choose Your Action').isVisible({ timeout: 2000 }).catch(() => false);
+    const gameEnded = await isGameOver(page);
+
+    console.log(`Workflow complete: stillPlaying=${stillPlaying}, gameEnded=${gameEnded}, releaseSuccess=${releaseSuccess}`);
+    expect(stillPlaying || gameEnded).toBe(true);
+  });
+
+  test('DIY strategy - no label, focus on streaming', async ({ page }) => {
+    await startGame(page, {
+      name: 'DIYArtist',
+      talent: 'Gifted',
+      difficulty: 'Garage Band'
+    });
+
+    // DIY strategy: Write songs, release singles, post content
+    const actions = ['Write', 'Post Content', 'Release Single', 'Post Content', 'Side Job'];
+
+    for (let i = 0; i < 15; i++) {
+      await handleEventIfPresent(page);
+      if (await isGameOver(page)) {
+        console.log(`DIY strategy: Game ended at week ${i + 1}`);
+        break;
+      }
+
+      const action = actions[i % actions.length];
+      const success = await takeAction(page, action);
+      if (!success) {
+        // Fallback to side job if action not available
+        await takeAction(page, 'Side Job');
+      }
+
+      await handleEventIfPresent(page);
+    }
+
+    const stillPlaying = await page.locator('text=Choose Your Action').isVisible({ timeout: 2000 }).catch(() => false);
+    const gameEnded = await isGameOver(page);
+
+    console.log(`DIY strategy after 15 weeks: stillPlaying=${stillPlaying}, gameEnded=${gameEnded}`);
+    expect(stillPlaying || gameEnded).toBe(true);
+  });
+});

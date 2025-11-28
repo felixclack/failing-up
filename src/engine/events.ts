@@ -12,6 +12,7 @@ import {
 } from './types';
 import { RandomGenerator } from './random';
 import { getEventChance } from './difficulty';
+import { getTotalFans } from './state';
 
 // =============================================================================
 // Event Eligibility
@@ -28,8 +29,9 @@ export function checkTriggerConditions(
   const { player, bandmates } = state;
 
   // Stat range checks
-  if (conditions.minFans !== undefined && player.fans < conditions.minFans) return false;
-  if (conditions.maxFans !== undefined && player.fans > conditions.maxFans) return false;
+  const totalFans = getTotalFans(player);
+  if (conditions.minFans !== undefined && totalFans < conditions.minFans) return false;
+  if (conditions.maxFans !== undefined && totalFans > conditions.maxFans) return false;
   if (conditions.minHealth !== undefined && player.health < conditions.minHealth) return false;
   if (conditions.maxHealth !== undefined && player.health > conditions.maxHealth) return false;
   if (conditions.minAddiction !== undefined && player.addiction < conditions.minAddiction) return false;
@@ -47,6 +49,18 @@ export function checkTriggerConditions(
   if (conditions.minImage !== undefined && player.image < conditions.minImage) return false;
   if (conditions.maxImage !== undefined && player.image > conditions.maxImage) return false;
   if (conditions.minSkill !== undefined && player.skill < conditions.minSkill) return false;
+
+  // Streaming era checks
+  if (conditions.minFollowers !== undefined && player.followers < conditions.minFollowers) return false;
+  if (conditions.maxFollowers !== undefined && player.followers > conditions.maxFollowers) return false;
+  if (conditions.minCoreFans !== undefined && player.coreFans < conditions.minCoreFans) return false;
+  if (conditions.minAlgoBoost !== undefined && player.algoBoost < conditions.minAlgoBoost) return false;
+  if (conditions.maxAlgoBoost !== undefined && player.algoBoost > conditions.maxAlgoBoost) return false;
+  if (conditions.minCataloguePower !== undefined && player.cataloguePower < conditions.minCataloguePower) return false;
+  if (conditions.minReleasedSongs !== undefined) {
+    const releasedCount = state.songs.filter(s => s.isReleased).length;
+    if (releasedCount < conditions.minReleasedSongs) return false;
+  }
 
   // Time checks
   if (conditions.minWeek !== undefined && state.week < conditions.minWeek) return false;
@@ -207,7 +221,23 @@ export function applyEventChoice(
       player.image = Math.max(0, Math.min(100, player.image + choice.statChanges.image));
     }
     if (choice.statChanges.fans !== undefined) {
-      player.fans = Math.max(0, player.fans + choice.statChanges.fans);
+      // Legacy 'fans' delta is applied to coreFans for backward compatibility
+      player.coreFans = Math.max(0, player.coreFans + choice.statChanges.fans);
+    }
+    if (choice.statChanges.coreFans !== undefined) {
+      player.coreFans = Math.max(0, player.coreFans + choice.statChanges.coreFans);
+    }
+    if (choice.statChanges.casualListeners !== undefined) {
+      player.casualListeners = Math.max(0, player.casualListeners + choice.statChanges.casualListeners);
+    }
+    if (choice.statChanges.followers !== undefined) {
+      player.followers = Math.max(0, player.followers + choice.statChanges.followers);
+    }
+    if (choice.statChanges.algoBoost !== undefined) {
+      player.algoBoost = Math.max(0, Math.min(100, player.algoBoost + choice.statChanges.algoBoost));
+    }
+    if (choice.statChanges.cataloguePower !== undefined) {
+      player.cataloguePower = Math.max(0, Math.min(100, player.cataloguePower + choice.statChanges.cataloguePower));
     }
     if (choice.statChanges.hype !== undefined) {
       player.hype = Math.max(0, Math.min(100, player.hype + choice.statChanges.hype));
