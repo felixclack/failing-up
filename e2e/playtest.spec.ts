@@ -37,6 +37,28 @@ async function startGame(
   await page.waitForSelector('text=Week', { timeout: 5000 });
 }
 
+// Helper to handle naming modal if present (for songs/albums)
+async function handleNamingIfPresent(page: Page): Promise<boolean> {
+  try {
+    // Check for "Name Your Song" or "Name Your Album" modal
+    const isSongNaming = await page.locator('text=NAME YOUR SONG').isVisible({ timeout: 300 });
+    const isAlbumNaming = await page.locator('text=NAME YOUR ALBUM').isVisible({ timeout: 300 });
+
+    if (isSongNaming || isAlbumNaming) {
+      // Click "Save Song" or "Record Album" to accept the generated name
+      const saveBtn = page.locator('button:has-text("Save Song"), button:has-text("Record Album")');
+      if (await saveBtn.isVisible({ timeout: 500 })) {
+        await saveBtn.click();
+        await page.waitForTimeout(300);
+        return true;
+      }
+    }
+  } catch {
+    // No naming modal
+  }
+  return false;
+}
+
 // Helper to take an action
 async function takeAction(page: Page, actionName: string): Promise<boolean> {
   try {
@@ -44,6 +66,10 @@ async function takeAction(page: Page, actionName: string): Promise<boolean> {
     if (await button.isEnabled({ timeout: 1000 })) {
       await button.click();
       await page.waitForTimeout(300);
+
+      // Handle naming modal if it appears (e.g., after Write action)
+      await handleNamingIfPresent(page);
+
       return true;
     }
   } catch {
@@ -55,6 +81,9 @@ async function takeAction(page: Page, actionName: string): Promise<boolean> {
 // Helper to handle event modal if present
 async function handleEventIfPresent(page: Page): Promise<boolean> {
   try {
+    // First check for naming modal and handle it
+    await handleNamingIfPresent(page);
+
     // Check if event modal is visible
     const modal = page.locator('.fixed.inset-0');
     if (await modal.isVisible({ timeout: 500 })) {

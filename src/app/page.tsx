@@ -5,6 +5,7 @@ import { StartScreen } from '@/components/game/StartScreen';
 import { GameScreen } from '@/components/game/GameScreen';
 import { EndingScreen } from '@/components/game/EndingScreen';
 import { EventModal, EventOutcome } from '@/components/game/EventModal';
+import { NamingModal } from '@/components/game/NamingModal';
 
 export default function Home() {
   const {
@@ -21,6 +22,9 @@ export default function Home() {
     eventOutcome,
     handleEventChoice,
     dismissEventOutcome,
+    pendingNaming,
+    confirmNaming,
+    cancelNaming,
   } = useGame();
 
   // Not started - show start screen
@@ -70,6 +74,15 @@ export default function Home() {
           event={pendingEvent}
           choice={eventOutcome}
           onContinue={dismissEventOutcome}
+        />
+      )}
+
+      {/* Naming Modal - show when player writes a song or records an album */}
+      {pendingNaming && (
+        <NamingModal
+          pending={pendingNaming}
+          onConfirm={confirmNaming}
+          onCancel={cancelNaming}
         />
       )}
     </>

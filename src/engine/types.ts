@@ -349,7 +349,27 @@ export interface ActionResult {
   // For actions that produce something (like Write producing a song)
   producedSongId?: string;
   producedAlbumId?: string;
+  // Full song data when a song is produced (for naming flow)
+  producedSong?: Song;
 }
+
+// =============================================================================
+// Naming Flow (for songs and albums)
+// =============================================================================
+
+export interface PendingSongNaming {
+  type: 'song';
+  song: Song;
+  generatedTitle: string;
+}
+
+export interface PendingAlbumNaming {
+  type: 'album';
+  songIds: string[];
+  generatedTitle: string;
+}
+
+export type PendingNaming = PendingSongNaming | PendingAlbumNaming;
 
 // =============================================================================
 // Endings

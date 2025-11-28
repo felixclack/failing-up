@@ -345,7 +345,14 @@ export function processTurnWithEvents(
     };
 
     // If action produced a song, add it
-    if (actionResult.producedSongId) {
+    // Use the full song object if available, otherwise reconstruct from ID
+    if (actionResult.producedSong) {
+      newState = {
+        ...newState,
+        songs: [...newState.songs, actionResult.producedSong],
+      };
+    } else if (actionResult.producedSongId) {
+      // Fallback for backwards compatibility
       const newSong: Song = {
         id: actionResult.producedSongId,
         title: actionResult.message.match(/"([^"]+)"/)?.[1] || 'Untitled',

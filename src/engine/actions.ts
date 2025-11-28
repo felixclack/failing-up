@@ -228,7 +228,7 @@ const SONG_NOUNS = [
   'Devil', 'Road', 'City', 'Love', 'Pain', 'Rain', 'Blood', 'Star',
 ];
 
-function generateSongTitle(rng: RandomGenerator): string {
+export function generateSongTitle(rng: RandomGenerator): string {
   const adj = SONG_ADJECTIVES[rng.nextInt(0, SONG_ADJECTIVES.length - 1)];
   const noun = SONG_NOUNS[rng.nextInt(0, SONG_NOUNS.length - 1)];
   return `${adj} ${noun}`;
@@ -267,9 +267,10 @@ function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
     // Hit potential based on quality and some randomness
     const hitPotential = clampStat(Math.floor(quality * 0.7 + rng.nextInt(0, 30)));
 
+    const generatedTitle = generateSongTitle(rng);
     const song: Song = {
       id: `song_${state.week}_${rng.nextInt(0, 9999)}`,
-      title: generateSongTitle(rng),
+      title: generatedTitle,
       quality,
       style: getSongStyle(preferredStyle, rng),
       hitPotential,
@@ -282,6 +283,7 @@ function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
       message: `You wrote "${song.title}" - ${getQualityDescription(quality)} quality.`,
       statChanges: ACTIONS.WRITE.baseEffects,
       producedSongId: song.id,
+      producedSong: song,
     };
   } else {
     // Didn't finish a song, but still practiced

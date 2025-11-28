@@ -204,6 +204,23 @@ export function applyAlbumSalesToRecoup(
 // Album System
 // =============================================================================
 
+// Album title word banks
+const ALBUM_ADJECTIVES = [
+  'Electric', 'Midnight', 'Savage', 'Wild', 'Dark', 'Burning', 'Broken',
+  'Neon', 'Screaming', 'Rising', 'Lost', 'Dirty', 'Raw', 'Wasted', 'Hungry',
+];
+
+const ALBUM_NOUNS = [
+  'Dreams', 'Thunder', 'Fire', 'Chaos', 'Revolution', 'Rebellion', 'Nights',
+  'Blood', 'Glory', 'Ruin', 'Machine', 'Highway', 'Kingdom', 'Asylum', 'Fury',
+];
+
+export function generateAlbumTitle(rng: RandomGenerator): string {
+  const adj = ALBUM_ADJECTIVES[rng.nextInt(0, ALBUM_ADJECTIVES.length - 1)];
+  const noun = ALBUM_NOUNS[rng.nextInt(0, ALBUM_NOUNS.length - 1)];
+  return `${adj} ${noun}`;
+}
+
 /**
  * Calculate album quality from songs and production
  */
