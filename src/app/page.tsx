@@ -31,8 +31,8 @@ export default function Home() {
   if (!isStarted || !gameState) {
     return (
       <StartScreen
-        onStart={(playerName, difficulty, talentLevel, preferredStyle) =>
-          startGame({ playerName, difficulty, talentLevel, preferredStyle })
+        onStart={(playerName, bandName, difficulty, talentLevel, preferredStyle) =>
+          startGame({ playerName, bandName, difficulty, talentLevel, preferredStyle })
         }
       />
     );

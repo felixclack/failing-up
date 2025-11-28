@@ -1,28 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Difficulty, TalentLevel, MusicStyle } from '@/engine/types';
 import { getAvailableDifficulties } from '@/engine/difficulty';
-import { getAvailableTalentLevels, getAvailableStyles } from '@/engine/state';
+import { getAvailableTalentLevels, getAvailableStyles, generateBandName } from '@/engine/state';
+import { createRandom, generateSeed } from '@/engine/random';
 
 interface StartScreenProps {
-  onStart: (playerName: string, difficulty: Difficulty, talentLevel: TalentLevel, preferredStyle: MusicStyle) => void;
+  onStart: (playerName: string, bandName: string, difficulty: Difficulty, talentLevel: TalentLevel, preferredStyle: MusicStyle) => void;
 }
 
 const difficulties = getAvailableDifficulties();
 const talentLevels = getAvailableTalentLevels();
 const musicStyles = getAvailableStyles();
 
+// Generate initial band name
+const initialBandName = generateBandName(createRandom(generateSeed()));
+
 export function StartScreen({ onStart }: StartScreenProps) {
   const [playerName, setPlayerName] = useState('');
+  const [bandName, setBandName] = useState(initialBandName);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [talentLevel, setTalentLevel] = useState<TalentLevel>('average');
   const [preferredStyle, setPreferredStyle] = useState<MusicStyle>('punk');
 
+  const handleGenerateBandName = useCallback(() => {
+    const rng = createRandom(generateSeed());
+    setBandName(generateBandName(rng));
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (playerName.trim()) {
-      onStart(playerName.trim(), difficulty, talentLevel, preferredStyle);
+    if (playerName.trim() && bandName.trim()) {
+      onStart(playerName.trim(), bandName.trim(), difficulty, talentLevel, preferredStyle);
     }
   };
 
@@ -61,6 +71,31 @@ export function StartScreen({ onStart }: StartScreenProps) {
               className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
               autoFocus
             />
+          </div>
+
+          {/* Band Name Input */}
+          <div>
+            <label htmlFor="bandName" className="block text-gray-400 text-sm mb-2">
+              What's your band called?
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                id="bandName"
+                value={bandName}
+                onChange={(e) => setBandName(e.target.value)}
+                placeholder="Enter band name..."
+                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
+              />
+              <button
+                type="button"
+                onClick={handleGenerateBandName}
+                className="px-4 py-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg text-gray-300 transition-colors"
+                title="Generate random band name"
+              >
+                🎲
+              </button>
+            </div>
           </div>
 
           {/* Talent Level Selection */}
@@ -152,10 +187,10 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
           <button
             type="submit"
-            disabled={!playerName.trim()}
+            disabled={!playerName.trim() || !bandName.trim()}
             className={`
               w-full py-3 font-bold rounded-lg transition-colors
-              ${playerName.trim()
+              ${playerName.trim() && bandName.trim()
                 ? 'bg-red-600 hover:bg-red-500 text-white'
                 : 'bg-gray-700 text-gray-500 cursor-not-allowed'
               }

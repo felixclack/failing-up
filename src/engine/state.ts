@@ -200,6 +200,42 @@ export function createPlayer(
   };
 }
 
+// =============================================================================
+// Band Name Generation
+// =============================================================================
+
+const BAND_PREFIXES = [
+  'The', 'Black', 'Red', 'Dead', 'Electric', 'Burning', 'Screaming', 'Midnight',
+  'Savage', 'Neon', 'Dark', 'Violent', 'Iron', 'Steel', 'Atomic', 'Sonic',
+];
+
+const BAND_NOUNS = [
+  'Roses', 'Skulls', 'Wolves', 'Snakes', 'Razors', 'Bullets', 'Flames', 'Shadows',
+  'Daggers', 'Vipers', 'Ravens', 'Thunder', 'Lightning', 'Storm', 'Riot', 'Chaos',
+  'Velvet', 'Ashes', 'Chains', 'Blades', 'Hearts', 'Demons', 'Angels', 'Rebels',
+];
+
+const BAND_SUFFIXES = [
+  '', '', '', '', // Higher chance of no suffix
+  'Underground', 'Society', 'Collective', 'Machine', 'Army', 'Syndicate',
+];
+
+export function generateBandName(rng: RandomGenerator): string {
+  const usePrefix = rng.next() < 0.7; // 70% chance of prefix
+  const useSuffix = rng.next() < 0.2; // 20% chance of suffix
+
+  const prefix = usePrefix ? BAND_PREFIXES[rng.nextInt(0, BAND_PREFIXES.length - 1)] : '';
+  const noun = BAND_NOUNS[rng.nextInt(0, BAND_NOUNS.length - 1)];
+  const suffix = useSuffix ? BAND_SUFFIXES[rng.nextInt(0, BAND_SUFFIXES.length - 1)] : '';
+
+  const parts = [prefix, noun, suffix].filter(p => p);
+  return parts.join(' ');
+}
+
+// =============================================================================
+// Bandmate Generation
+// =============================================================================
+
 // Bandmate name pools
 const FIRST_NAMES = [
   'Johnny', 'Vinnie', 'Tommy', 'Richie', 'Eddie', 'Bobby', 'Danny', 'Mickey',
@@ -242,6 +278,7 @@ export function createStartingBand(rng: RandomGenerator): Bandmate[] {
 
 export interface CreateGameOptions {
   playerName: string;
+  bandName?: string;
   playerTalent?: number;
   talentLevel?: TalentLevel;
   preferredStyle?: MusicStyle;
@@ -270,10 +307,14 @@ export function createGameState(options: CreateGameOptions): GameState {
     talent,
   }, rng, difficultySettings);
 
+  // Use provided band name or generate one
+  const bandName = options.bandName || generateBandName(rng);
+
   const bandmates = createStartingBand(rng);
 
   return {
     player,
+    bandName,
     bandmates,
     songs: [],
     albums: [],

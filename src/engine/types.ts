@@ -291,6 +291,7 @@ export interface WeekLog {
 export interface GameState {
   // Core state
   player: Player;
+  bandName: string;
   bandmates: Bandmate[];
   songs: Song[];
   albums: Album[];

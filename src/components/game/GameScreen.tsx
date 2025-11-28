@@ -21,14 +21,14 @@ export function GameScreen({
   onSelectAction,
   onFireBandmate,
 }: GameScreenProps) {
-  const { player, week, year, weekLogs, bandmates } = gameState;
+  const { player, bandName, week, year, weekLogs, bandmates } = gameState;
 
   return (
     <div className="min-h-screen bg-black p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-red-500">FAILING UP</h1>
+          <h1 className="text-2xl font-bold text-red-500">{bandName || 'FAILING UP'}</h1>
         </div>
 
         {/* Main Layout */}
