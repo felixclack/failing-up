@@ -166,6 +166,94 @@ src/
 
 ---
 
+### Milestone 8: Streaming & Social Era Update
+**Goal**: Modernize the game with streaming platforms and social media mechanics.
+**Reference**: [UPDATE.md](./UPDATE.md)
+
+#### 8.1 - New Stats & Player Model
+- [ ] Split Fans into CoreFans and CasualListeners
+- [ ] Add Followers stat (aggregate social followers)
+- [ ] Add AlgoBoost stat (0-100, platform favor)
+- [ ] Add CataloguePower stat (0-100, streaming back-catalog strength)
+- [ ] Update Player interface and state creation
+- [ ] Update StatsDisplay to show new metrics
+- [ ] Write tests for new stat calculations
+
+#### 8.2 - Streaming Catalogue System
+- [ ] Add streaming fields to Song type:
+  - streamsTier (NONE/LOW/MED/HIGH/MASSIVE)
+  - playlistScore (0-100)
+  - viralFlag (bool, temporary)
+  - isSingle (bool)
+- [ ] Implement weekly streaming income calculation
+- [ ] Implement AlgoBoost decay mechanics
+- [ ] Create "Release Single" action
+- [ ] Write tests for streaming income
+
+#### 8.3 - Social Media Actions
+- [ ] Implement "Post Content" action (safe grind)
+- [ ] Implement "Short-Form Blitz" action (viral lottery)
+- [ ] Implement "Livestream / Online Show" action
+- [ ] Implement "Engage Community" action (Patreon/Discord vibe)
+- [ ] Add Followers growth calculations
+- [ ] Write tests for social actions
+
+#### 8.4 - Modern Label Deals
+- [ ] Update LabelDeal type with dealType (traditional/distro/360)
+- [ ] Add includesMasters, includesMerch, includesTouring flags
+- [ ] Implement streaming payout filtering through deal terms
+- [ ] Add DIY route with no-label viability
+- [ ] Create "Brand / Sponsorship Deals" action/events
+- [ ] Write tests for modern deal economics
+
+#### 8.5 - Digital Era Events
+- [ ] Create playlist feature events (editorial, algorithmic)
+- [ ] Create viral moment events
+- [ ] Create sponsor/brand deal events
+- [ ] Create platform algorithm change events
+- [ ] Create social media drama events
+- [ ] Write tests for new events
+
+#### 8.6 - New Arcs (Digital Era)
+- [ ] **Viral One-Hit Arc**: Clip blows up → label/brand swarm → meme pressure → sustain or fade
+- [ ] **Cancel / Backlash Arc**: Something blows up → apologize/double-down/go dark → recovery
+- [ ] **Platform Algorithm Shift Arc**: Platform changes → adapt/ignore/pivot
+- [ ] **Creator Burnout Arc**: Symptoms → push through or slow down → break or collapse
+- [ ] **DIY Patron / Membership Arc**: Launch membership → maintain output → success or guilt
+- [ ] Write tests for new arcs
+
+#### 8.7 - New Endings (Digital Era)
+- [ ] Algorithm Casualty: Platform changes killed your career
+- [ ] Content Creator Prison: Financially OK but endless treadmill
+- [ ] DIY Cult Hero: Strong core fans, good cred, small mainstream footprint
+- [ ] Viral Ghost: One massive meme song, no one knows who you are
+- [ ] Update ending determination algorithm
+- [ ] Write tests for new endings
+
+**Deliverable**: Complete streaming/social era gameplay with modern music industry mechanics.
+
+**Status**: NOT STARTED
+
+---
+
+### Milestone 9: Balance & Polish
+**Goal**: Tune the expanded game for balanced, replayable gameplay.
+
+- [ ] Balance streaming income vs traditional income sources
+- [ ] Tune CoreFans vs CasualListeners conversion rates
+- [ ] Balance viral chance vs burnout cost
+- [ ] Playtest DIY route vs label route viability
+- [ ] Balance 360 deal tradeoffs
+- [ ] Tune AlgoBoost decay rate
+- [ ] Add Playwright tests for new mechanics
+- [ ] Performance optimization if needed
+
+**Deliverable**: Well-balanced game with multiple viable strategies.
+
+**Status**: NOT STARTED
+
+---
+
 ## Progress Log
 
 ### Session 1 - Initial Setup
@@ -321,6 +409,25 @@ src/
   - Difficulty selection
 - Wrote 29 new tests (248 total tests passing)
 
+### Session 8 - UX Improvements & Plan Update
+- Added song/album naming feature:
+  - NamingModal component for naming songs and albums
+  - Players can accept generated names or enter custom ones
+  - Naming modal appears after writing a song or starting album recording
+- Added band naming feature:
+  - Band name input in character creation with generate button
+  - Band name generator creates names like "The Savage Wolves", "Black Thunder"
+  - Band name displayed as header during gameplay
+- Set up Playwright E2E testing:
+  - 9 automated playtest scenarios
+  - Tests for economic balance, game flow, UI elements
+- Updated IMPLEMENTATION.md with Milestone 8 (Streaming & Social Era) from UPDATE.md:
+  - New stats: CoreFans, CasualListeners, Followers, AlgoBoost, CataloguePower
+  - New actions: Release Single, Post Content, Short-Form Blitz, Livestream, Engage Community
+  - New systems: Streaming catalogue, playlist/algorithm mechanics, modern label deals (360/distro)
+  - New arcs: Viral One-Hit, Cancel/Backlash, Platform Algorithm Shift, Creator Burnout, DIY Patron
+  - New endings: Algorithm Casualty, Content Creator Prison, DIY Cult Hero, Viral Ghost
+
 ---
 
 ## Testing Strategy
@@ -356,8 +463,8 @@ npm run test:coverage # Generate coverage report
 ## Current Status
 
 **Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy, 4 - Bandmates, 5 - Arcs, 6 - Endings & Polish, 7 - Content Expansion
-**Active Milestone**: None - v1 Feature Complete!
-**Next Steps**: Balance tuning, playtesting
+**Active Milestone**: 8 - Streaming & Social Era Update
+**Next Steps**: Implement streaming/social media mechanics from UPDATE.md
 
 ### What's Playable Now
 - Start a new game with full character creation:
