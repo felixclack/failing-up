@@ -13,6 +13,7 @@ export default function Home() {
     startGame,
     takeAction,
     restartGame,
+    handleFireBandmate,
     availableActions,
     currentWeekLog,
     pendingEvent,
@@ -48,6 +49,7 @@ export default function Home() {
         availableActions={availableActions}
         currentMessage={currentWeekLog}
         onSelectAction={takeAction}
+        onFireBandmate={handleFireBandmate}
       />
 
       {/* Event Modal - show when event triggered but not yet resolved */}

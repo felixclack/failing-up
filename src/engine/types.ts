@@ -189,6 +189,9 @@ export interface EventTriggerConditions {
   // Band requirements
   minBandVice?: number;
   minBandSize?: number;
+  minBandmates?: number;
+  // Flag requirements
+  hasFlag?: string;
 }
 
 export interface EventChoice {

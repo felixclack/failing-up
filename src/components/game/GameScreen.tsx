@@ -4,12 +4,14 @@ import { GameState, ActionId } from '@/engine/types';
 import { StatsDisplay } from './StatsDisplay';
 import { ActionPanel } from './ActionPanel';
 import { WeeklyLog } from './WeeklyLog';
+import { BandDisplay } from './BandDisplay';
 
 interface GameScreenProps {
   gameState: GameState;
   availableActions: ActionId[];
   currentMessage: string | null;
   onSelectAction: (actionId: ActionId) => void;
+  onFireBandmate?: (bandmateId: string) => void;
 }
 
 export function GameScreen({
@@ -17,8 +19,9 @@ export function GameScreen({
   availableActions,
   currentMessage,
   onSelectAction,
+  onFireBandmate,
 }: GameScreenProps) {
-  const { player, week, year, weekLogs } = gameState;
+  const { player, week, year, weekLogs, bandmates } = gameState;
 
   return (
     <div className="min-h-screen bg-black p-4">
@@ -30,9 +33,10 @@ export function GameScreen({
 
         {/* Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left Column - Stats */}
+          {/* Left Column - Stats & Band */}
           <div className="lg:col-span-3">
             <StatsDisplay player={player} week={week} year={year} />
+            <BandDisplay bandmates={bandmates} onFireBandmate={onFireBandmate} />
           </div>
 
           {/* Center Column - Actions */}

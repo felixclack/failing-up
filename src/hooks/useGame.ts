@@ -6,6 +6,7 @@ import { createGameState, CreateGameOptions } from '@/engine/state';
 import { processTurn, processTurnWithEvents } from '@/engine/turn';
 import { getAvailableActions } from '@/engine/actions';
 import { applyEventChoice } from '@/engine/events';
+import { fireBandmate } from '@/engine/band';
 import { ALL_EVENTS } from '@/data/events';
 
 export interface UseGameReturn {
@@ -24,6 +25,7 @@ export interface UseGameReturn {
   handleEventChoice: (choice: EventChoice) => void;
   dismissEventOutcome: () => void;
   restartGame: () => void;
+  handleFireBandmate: (bandmateId: string) => void;
 
   // Computed
   availableActions: ActionId[];
@@ -113,6 +115,14 @@ export function useGame(): UseGameReturn {
     }
   }, [lastOptions]);
 
+  const handleFireBandmate = useCallback((bandmateId: string) => {
+    if (!gameState || gameState.isGameOver) return;
+    if (pendingEvent) return; // Can't fire while event pending
+
+    const newState = fireBandmate(gameState, bandmateId);
+    setGameState(newState);
+  }, [gameState, pendingEvent]);
+
   const availableActions = useMemo(() => {
     if (!gameState) return [];
     return getAvailableActions(gameState);
@@ -134,6 +144,7 @@ export function useGame(): UseGameReturn {
     handleEventChoice,
     dismissEventOutcome,
     restartGame,
+    handleFireBandmate,
     availableActions,
     currentWeekLog,
   };

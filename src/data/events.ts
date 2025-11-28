@@ -5,6 +5,7 @@
 
 import { GameEvent } from '@/engine/types';
 import { labelEvents } from './labelEvents';
+import { bandEvents } from './bandEvents';
 
 // =============================================================================
 // Band Conflict Events
@@ -517,6 +518,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...gigEvents,
   ...sceneEvents,
   ...labelEvents,
+  ...bandEvents,
 ];
 
 // Export categories for filtering if needed
@@ -527,4 +529,5 @@ export const EVENT_CATEGORIES = {
   gig: gigEvents,
   scene: sceneEvents,
   label: labelEvents,
+  band: bandEvents,
 };

@@ -100,16 +100,18 @@ src/
 
 ---
 
-### Milestone 4: Bandmates
+### Milestone 4: Bandmates - COMPLETE
 **Goal**: Bandmates with personalities that affect gameplay.
 
-- [ ] Implement bandmate generation with randomized attributes
-- [ ] Add band performance calculations (talent average, reliability)
-- [ ] Create bandmate-related events (fights, departures, deaths)
-- [ ] Add ability to fire/hire bandmates
-- [ ] Write tests for band dynamics
+- [x] Implement bandmate generation with randomized attributes
+- [x] Add band performance calculations (talent average, reliability)
+- [x] Create bandmate-related events (fights, departures, deaths)
+- [x] Add ability to fire/hire bandmates
+- [x] Write tests for band dynamics
 
 **Deliverable**: Band members that help or hinder your career with their own drama.
+
+**Status**: COMPLETE - Band management engine with 11 events, UI with fire capability, 43 new tests (141 total).
 
 ---
 
@@ -218,6 +220,28 @@ src/
   - Recoupment celebration
 - Wrote 22 new economy tests (98 total tests passing)
 
+### Session 3 - Bandmates System (Milestone 4 Complete)
+- Created band management engine (`src/engine/band.ts`):
+  - Bandmate generation with fame-scaled candidates
+  - Hire/fire/quit/rehab/death management
+  - Performance calculations (talent, reliability, vice, loyalty)
+  - Quit/reliability/vice checking with probability
+  - Weekly loyalty changes based on success/money/stability
+  - Display helpers for roles and statuses
+- Created 11 band-specific events (`src/data/bandEvents.ts`):
+  - Creative clashes, ultimatums, drug problems
+  - Member arrests, poaching attempts, breakup talks
+  - Overdose deaths (one-time), van breakdowns
+  - Positive chemistry moments
+- Built BandDisplay UI component with:
+  - Active/inactive member display
+  - Loyalty, vice, reliability warnings
+  - Fire button for active members
+  - Collapsible former members section
+- Added minBandmates and hasFlag trigger conditions to events system
+- Integrated band display into GameScreen
+- Wrote 43 new band tests (141 total tests passing)
+
 ---
 
 ## Testing Strategy
@@ -252,9 +276,9 @@ npm run test:coverage # Generate coverage report
 
 ## Current Status
 
-**Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy
-**Active Milestone**: 4 - Bandmates
-**Next Task**: Add bandmate dynamics (hiring, firing, conflicts, departures)
+**Completed Milestones**: 1 - Core Game Loop, 2 - Events System, 3 - Economy, 4 - Bandmates
+**Active Milestone**: 5 - Arcs & Narrative Depth
+**Next Task**: Implement arc system with entry conditions and stage progression
 
 ### What's Playable Now
 - Start a new game with your stage name
@@ -264,6 +288,9 @@ npm run test:coverage # Generate coverage report
 - **Random events trigger** with meaningful choices and consequences
 - Events have visual hints showing costs and risks
 - **Label deal events** can trigger based on your progress
+- **Band members** with visible stats and personalities
+- Fire underperforming or troublesome bandmates
+- Band-specific events (fights, deaths, departures)
 - Game ends when you die, go broke, or reach 10 years
 - See ending screen with career summary
 
@@ -273,6 +300,14 @@ npm run test:coverage # Generate coverage report
 - Album sales: 6 tiers from flop to diamond
 - Tour finances: guarantees, costs, merch revenue
 - Gig payouts: scale with local fanbase and hype
+
+### Band System Ready
+- Starting band: guitar, bass, drums auto-generated
+- Bandmate stats: talent, reliability, vice, loyalty
+- Performance calculations affect gig/recording quality
+- Weekly loyalty changes based on success factors
+- Fire capability with morale impact on remaining members
+- 11 band-specific events with dramatic choices
 
 ---
 

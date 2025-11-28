@@ -55,12 +55,20 @@ export function checkTriggerConditions(
   // Band checks
   const activeBandmates = bandmates.filter(b => b.status === 'active');
   if (conditions.minBandSize !== undefined && activeBandmates.length < conditions.minBandSize) return false;
+  if (conditions.minBandmates !== undefined && activeBandmates.length < conditions.minBandmates) return false;
 
   if (conditions.minBandVice !== undefined) {
     const avgVice = activeBandmates.length > 0
       ? activeBandmates.reduce((sum, b) => sum + b.vice, 0) / activeBandmates.length
       : 0;
     if (avgVice < conditions.minBandVice) return false;
+  }
+
+  // Custom flag check (for event-specific flags stored in triggeredEventIds or custom flags)
+  if (conditions.hasFlag !== undefined) {
+    // Check if the flag exists in triggeredEventIds or custom flags
+    const hasCustomFlag = state.triggeredEventIds.some(id => id === conditions.hasFlag);
+    if (!hasCustomFlag) return false;
   }
 
   return true;
