@@ -39,6 +39,34 @@ export type GameOverReason =
   | 'band_collapsed'
   | 'voluntary_retirement';
 
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'brutal';
+
+// =============================================================================
+// Difficulty Settings
+// =============================================================================
+
+export interface DifficultySettings {
+  name: string;
+  description: string;
+  // Economic multipliers (1.0 = normal)
+  livingCostMultiplier: number;      // Weekly expenses
+  gigPayMultiplier: number;          // Money from gigs
+  advanceMultiplier: number;         // Label deal advances
+  // Stat multipliers
+  fanGainMultiplier: number;         // Fans gained from actions
+  hypeDecayMultiplier: number;       // How fast hype decays
+  healthLossMultiplier: number;      // Health loss from actions/events
+  addictionGainMultiplier: number;   // How fast addiction increases
+  burnoutGainMultiplier: number;     // How fast burnout increases
+  // Starting stat adjustments
+  startingMoney: number;
+  startingHealth: number;
+  startingStability: number;
+  // Event chances
+  eventChanceMultiplier: number;     // Base event trigger chance
+  negativeEventWeight: number;       // Weight toward negative events (1.0 = normal)
+}
+
 // =============================================================================
 // Core Entities
 // =============================================================================
@@ -290,6 +318,10 @@ export interface GameState {
   // Config
   weeklyLivingCost: number;
   maxWeeks: number;
+
+  // Difficulty settings
+  difficulty: Difficulty;
+  difficultySettings: DifficultySettings;
 }
 
 // =============================================================================

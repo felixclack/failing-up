@@ -10,8 +10,10 @@ import {
   Bandmate,
   StatDeltas,
   BandmateRole,
+  Difficulty,
 } from './types';
 import { createRandom, generateSeed, RandomGenerator } from './random';
+import { getDifficultySettings, getWeeklyLivingCost } from './difficulty';
 
 // =============================================================================
 // Constants
@@ -65,9 +67,27 @@ export interface CreatePlayerOptions {
 
 /**
  * Create a new player with randomized starting stats
+ * Difficulty settings affect starting money, health, and stability
  */
-export function createPlayer(options: CreatePlayerOptions, rng: RandomGenerator): Player {
+export function createPlayer(
+  options: CreatePlayerOptions,
+  rng: RandomGenerator,
+  difficultySettings?: { startingMoney: number; startingHealth: number; startingStability: number }
+): Player {
   const { name, talent } = options;
+
+  // Use difficulty-adjusted values if provided, otherwise use random from range
+  const money = difficultySettings
+    ? difficultySettings.startingMoney + rng.nextInt(-50, 50)
+    : rng.nextInt(STARTING_STATS.money.min, STARTING_STATS.money.max);
+
+  const health = difficultySettings
+    ? Math.min(100, difficultySettings.startingHealth + rng.nextInt(-5, 10))
+    : rng.nextInt(STARTING_STATS.health.min, STARTING_STATS.health.max);
+
+  const stability = difficultySettings
+    ? Math.min(100, difficultySettings.startingStability + rng.nextInt(-5, 10))
+    : rng.nextInt(STARTING_STATS.stability.min, STARTING_STATS.stability.max);
 
   return {
     name,
@@ -76,9 +96,9 @@ export function createPlayer(options: CreatePlayerOptions, rng: RandomGenerator)
     image: rng.nextInt(STARTING_STATS.image.min, STARTING_STATS.image.max),
     fans: rng.nextInt(STARTING_STATS.fans.min, STARTING_STATS.fans.max),
     hype: rng.nextInt(STARTING_STATS.hype.min, STARTING_STATS.hype.max),
-    money: rng.nextInt(STARTING_STATS.money.min, STARTING_STATS.money.max),
-    health: rng.nextInt(STARTING_STATS.health.min, STARTING_STATS.health.max),
-    stability: rng.nextInt(STARTING_STATS.stability.min, STARTING_STATS.stability.max),
+    money,
+    health,
+    stability,
     cred: rng.nextInt(STARTING_STATS.cred.min, STARTING_STATS.cred.max),
     addiction: rng.nextInt(STARTING_STATS.addiction.min, STARTING_STATS.addiction.max),
     industryGoodwill: rng.nextInt(STARTING_STATS.industryGoodwill.min, STARTING_STATS.industryGoodwill.max),
@@ -131,6 +151,7 @@ export interface CreateGameOptions {
   playerName: string;
   playerTalent?: number;
   seed?: number;
+  difficulty?: Difficulty;
 }
 
 /**
@@ -139,11 +160,13 @@ export interface CreateGameOptions {
 export function createGameState(options: CreateGameOptions): GameState {
   const seed = options.seed ?? generateSeed();
   const rng = createRandom(seed);
+  const difficulty = options.difficulty ?? 'normal';
+  const difficultySettings = getDifficultySettings(difficulty);
 
   const player = createPlayer({
     name: options.playerName,
     talent: options.playerTalent,
-  }, rng);
+  }, rng, difficultySettings);
 
   const bandmates = createStartingBand(rng);
 
@@ -168,8 +191,11 @@ export function createGameState(options: CreateGameOptions): GameState {
     endingId: null,
 
     seed,
-    weeklyLivingCost: DEFAULT_WEEKLY_LIVING_COST,
+    weeklyLivingCost: getWeeklyLivingCost(DEFAULT_WEEKLY_LIVING_COST, difficultySettings),
     maxWeeks: MAX_WEEKS,
+
+    difficulty,
+    difficultySettings,
   };
 }
 

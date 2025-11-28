@@ -13,6 +13,7 @@ import {
 } from './types';
 import { applyStatDeltas, clampStat } from './state';
 import { createRandom, RandomGenerator } from './random';
+import { getGigPayout, getFanGain } from './difficulty';
 
 // =============================================================================
 // Action Definitions
@@ -286,9 +287,10 @@ function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
 
 /**
  * Execute Play Local Gig - variable money/fans based on performance
+ * Payouts and fan gains modified by difficulty
  */
 function executePlayLocalGig(state: GameState, rng: RandomGenerator): ActionResult {
-  const { player, bandmates } = state;
+  const { player, bandmates, difficultySettings } = state;
 
   // Calculate performance quality
   const bandTalent = bandmates.length > 0
@@ -304,13 +306,15 @@ function executePlayLocalGig(state: GameState, rng: RandomGenerator): ActionResu
   const turnoutRoll = rng.nextInt(-10, 10);
   const turnout = clampStat(turnoutBase + turnoutRoll);
 
-  // Calculate rewards
+  // Calculate rewards (base values, then apply difficulty multiplier)
   const basePay = 50;
   const turnoutBonus = Math.floor(turnout * 1.5);
   const performanceBonus = performance > 60 ? Math.floor((performance - 60) * 2) : 0;
-  const totalMoney = basePay + turnoutBonus + performanceBonus;
+  const baseMoneyEarned = basePay + turnoutBonus + performanceBonus;
+  const totalMoney = getGigPayout(baseMoneyEarned, difficultySettings);
 
-  const fansGained = Math.floor((performance / 100) * (turnout / 100) * rng.nextInt(5, 20));
+  const baseFansGained = Math.floor((performance / 100) * (turnout / 100) * rng.nextInt(5, 20));
+  const fansGained = getFanGain(baseFansGained, difficultySettings);
   const hypeGain = performance > 70 ? rng.nextInt(2, 5) : (performance < 40 ? rng.nextInt(-3, 0) : 0);
 
   // Build result message

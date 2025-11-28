@@ -22,6 +22,11 @@ import {
   shouldEventTrigger,
 } from './events';
 import {
+  getHypeDecay,
+  getHealthLoss,
+  getBurnoutGain,
+} from './difficulty';
+import {
   checkAndActivateArcs,
   checkAndAdvanceArcs,
   getArcEvents,
@@ -74,11 +79,12 @@ function applyWeeklyCosts(state: GameState): GameState {
 // =============================================================================
 
 /**
- * Apply hype decay
+ * Apply hype decay (modified by difficulty)
  */
 function applyHypeDecay(state: GameState): GameState {
   const currentHype = state.player.hype;
-  const newHype = Math.max(0, currentHype - HYPE_DECAY_RATE);
+  const decayAmount = getHypeDecay(HYPE_DECAY_RATE, state.difficultySettings);
+  const newHype = Math.max(0, currentHype - decayAmount);
 
   if (newHype === currentHype) return state;
 
@@ -93,28 +99,32 @@ function applyHypeDecay(state: GameState): GameState {
 
 /**
  * Apply addiction effects on health/stability
- * High addiction causes gradual damage
+ * High addiction causes gradual damage (modified by difficulty)
  */
 function applyAddictionEffects(state: GameState): GameState {
   const { addiction, health, stability } = state.player;
 
   if (addiction < 30) return state;
 
-  let healthDrain = 0;
-  let stabilityDrain = 0;
+  let baseHealthDrain = 0;
+  let baseStabilityDrain = 0;
 
   if (addiction >= CRITICAL_ADDICTION) {
-    healthDrain = 3;
-    stabilityDrain = 3;
+    baseHealthDrain = 3;
+    baseStabilityDrain = 3;
   } else if (addiction >= HIGH_ADDICTION) {
-    healthDrain = 2;
-    stabilityDrain = 2;
+    baseHealthDrain = 2;
+    baseStabilityDrain = 2;
   } else if (addiction >= 50) {
-    healthDrain = 1;
-    stabilityDrain = 1;
+    baseHealthDrain = 1;
+    baseStabilityDrain = 1;
   }
 
-  if (healthDrain === 0 && stabilityDrain === 0) return state;
+  if (baseHealthDrain === 0 && baseStabilityDrain === 0) return state;
+
+  // Apply difficulty multiplier to health loss
+  const healthDrain = getHealthLoss(baseHealthDrain, state.difficultySettings);
+  const stabilityDrain = getHealthLoss(baseStabilityDrain, state.difficultySettings);
 
   return {
     ...state,
@@ -128,15 +138,16 @@ function applyAddictionEffects(state: GameState): GameState {
 
 /**
  * Apply burnout effects
- * High burnout affects skill growth and stability
+ * High burnout affects skill growth and stability (modified by difficulty)
  */
 function applyBurnoutEffects(state: GameState): GameState {
   const { burnout, stability } = state.player;
 
   if (burnout < 50) return state;
 
-  // High burnout drains stability
-  const stabilityDrain = burnout >= 80 ? 2 : 1;
+  // High burnout drains stability (base values scaled by difficulty)
+  const baseDrain = burnout >= 80 ? 2 : 1;
+  const stabilityDrain = getBurnoutGain(baseDrain, state.difficultySettings);
 
   return {
     ...state,

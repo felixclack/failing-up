@@ -26,7 +26,7 @@ export default function Home() {
   if (!isStarted || !gameState) {
     return (
       <StartScreen
-        onStart={(playerName) => startGame({ playerName })}
+        onStart={(playerName, difficulty) => startGame({ playerName, difficulty })}
       />
     );
   }

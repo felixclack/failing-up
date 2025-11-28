@@ -11,6 +11,7 @@ import {
   ActionId,
 } from './types';
 import { RandomGenerator } from './random';
+import { getEventChance } from './difficulty';
 
 // =============================================================================
 // Event Eligibility
@@ -144,14 +145,15 @@ export function selectRandomEvent(
 
 /**
  * Determine if an event should trigger this turn
- * Base chance modified by various factors
+ * Base chance modified by various factors and difficulty
  */
 export function shouldEventTrigger(
   state: GameState,
   rng: RandomGenerator,
   baseChance: number = 0.4
 ): boolean {
-  let chance = baseChance;
+  // Apply difficulty multiplier to base chance
+  let chance = getEventChance(baseChance, state.difficultySettings);
 
   // Higher addiction increases event chance
   if (state.player.addiction >= 50) {
@@ -171,8 +173,8 @@ export function shouldEventTrigger(
     chance += 0.1;
   }
 
-  // Cap at 80%
-  chance = Math.min(0.8, chance);
+  // Cap at 90% (slightly higher cap with difficulty multiplier)
+  chance = Math.min(0.9, chance);
 
   return rng.next() < chance;
 }
