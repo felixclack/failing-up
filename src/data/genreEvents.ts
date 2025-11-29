@@ -115,7 +115,7 @@ const punkEvents: GameEvent[] = [
       preferredStyle: 'punk',
     },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'Cops show up to shut down the show. Noise complaints. The crowd\'s getting restless.',
     choices: [
       {
@@ -221,7 +221,7 @@ const metalEvents: GameEvent[] = [
       minSkill: 40,
     },
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The opening band\'s guitarist challenges you to a shred-off after the show. The metalheads are forming a circle.',
     choices: [
       {
@@ -293,7 +293,7 @@ const metalEvents: GameEvent[] = [
       minFans: 500,
     },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The pit gets out of control. Someone goes down hard. The crowd parts, looking to you.',
     choices: [
       {
@@ -417,7 +417,7 @@ const metalEvents: GameEvent[] = [
       minFans: 2000,
     },
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The crowd is ready. They\'re chanting for a wall of death. This could be epic or disastrous.',
     choices: [
       {
@@ -880,7 +880,7 @@ const glamEvents: GameEvent[] = [
       preferredStyle: 'glam',
     },
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'Your platform boots break mid-song. The heel just snapped off. Show must go on.',
     choices: [
       {
@@ -973,7 +973,7 @@ const glamEvents: GameEvent[] = [
       minFans: 1500,
     },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The energy is electric. The crowd is reaching up. Do you take the leap?',
     choices: [
       {

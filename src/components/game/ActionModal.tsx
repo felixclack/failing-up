@@ -92,12 +92,6 @@ function getSarcasticSuggestion(player: Player, availableActions: ActionId[]): {
         commentary: "Your bank account is crying. Time to serve coffee like a real artist.",
       };
     }
-    if (availableActions.includes('PLAY_LOCAL_GIG')) {
-      return {
-        suggestedAction: 'PLAY_LOCAL_GIG',
-        commentary: "Can't afford ramen? Maybe play for some pocket change.",
-      };
-    }
   }
 
   // High addiction
@@ -132,12 +126,6 @@ function getSarcasticSuggestion(player: Player, availableActions: ActionId[]): {
       return {
         suggestedAction: 'PROMOTE',
         commentary: "Remember when people cared about you? Neither do they. Do something.",
-      };
-    }
-    if (availableActions.includes('PLAY_LOCAL_GIG')) {
-      return {
-        suggestedAction: 'PLAY_LOCAL_GIG',
-        commentary: "The scene is forgetting you exist. Time to remind them... if anyone shows up.",
       };
     }
   }
@@ -198,7 +186,6 @@ function getActionCategory(actionId: ActionId): 'creative' | 'perform' | 'busine
     case 'STUDIO_WORK':
     case 'REHEARSE':
       return 'creative';
-    case 'PLAY_LOCAL_GIG':
     case 'TOUR':
     case 'RELEASE_SINGLE':
       return 'perform';

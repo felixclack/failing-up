@@ -279,7 +279,7 @@ export const bandEvents: GameEvent[] = [
       minHype: 30,
     },
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The new guitarist absolutely kills it at the show. The crowd goes wild for their solo. They might be the real deal.',
     choices: [
       {

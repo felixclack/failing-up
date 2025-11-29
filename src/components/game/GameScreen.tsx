@@ -6,6 +6,7 @@ import { CollapsibleSection } from './CollapsibleSection';
 import { KeyStats, CompactStats } from './KeyStats';
 import { WeekFeed } from './WeekFeed';
 import { ActionModal } from './ActionModal';
+import { ManagerPanel } from './ManagerPanel';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -15,6 +16,8 @@ interface GameScreenProps {
   weekReflection?: string | null;
   onSelectAction: (actionId: ActionId) => void;
   onFireBandmate?: (bandmateId: string) => void;
+  onHireManager?: () => void;
+  onFireManager?: () => void;
 }
 
 // Story panel component - shows current narrative and recent history
@@ -133,8 +136,10 @@ export function GameScreen({
   weekReflection,
   onSelectAction,
   onFireBandmate,
+  onHireManager,
+  onFireManager,
 }: GameScreenProps) {
-  const { player, bandName, week, year, weekLogs, bandmates, newsItems } = gameState;
+  const { player, bandName, week, year, weekLogs, bandmates, newsItems, manager, upcomingGig } = gameState;
   const activeBandmates = bandmates.filter(b => b.status === 'active');
 
   // Track if we're currently revealing the week's events
@@ -205,6 +210,23 @@ export function GameScreen({
             </div>
           </CollapsibleSection>
 
+          {/* Manager */}
+          <CollapsibleSection
+            title="💼 Manager"
+            badge={manager ? 1 : 0}
+            defaultOpen={false}
+          >
+            <div className="p-3">
+              <ManagerPanel
+                manager={manager}
+                upcomingGig={upcomingGig}
+                playerMoney={player.money}
+                onHireManager={onHireManager || (() => {})}
+                onFireManager={onFireManager || (() => {})}
+              />
+            </div>
+          </CollapsibleSection>
+
           {/* Band */}
           <CollapsibleSection
             title="🎤 The Band"
@@ -271,6 +293,15 @@ export function GameScreen({
                 week={week}
                 year={year}
                 bandName={bandName}
+              />
+
+              {/* Manager Panel */}
+              <ManagerPanel
+                manager={manager}
+                upcomingGig={upcomingGig}
+                playerMoney={player.money}
+                onHireManager={onHireManager || (() => {})}
+                onFireManager={onFireManager || (() => {})}
               />
 
               {/* Band Roster */}

@@ -7,6 +7,9 @@ import { EndingScreen } from '@/components/game/EndingScreen';
 import { EventModal, EventOutcome } from '@/components/game/EventModal';
 import { NamingModal } from '@/components/game/NamingModal';
 import { StudioSelectionModal } from '@/components/game/StudioSelectionModal';
+import { TemptationModal, TemptationOutcome } from '@/components/game/TemptationModal';
+import { GigOutcomeModal } from '@/components/game/GigOutcomeModal';
+import { ManagerHireModal } from '@/components/game/ManagerPanel';
 
 export default function Home() {
   const {
@@ -23,12 +26,24 @@ export default function Home() {
     eventOutcome,
     handleEventChoice,
     dismissEventOutcome,
+    pendingTemptation,
+    temptationOutcome,
+    handleTemptationChoice,
+    dismissTemptationOutcome,
     pendingNaming,
     selectStudio,
     confirmNaming,
     cancelNaming,
     flavorText,
     weekReflection,
+    pendingGigResult,
+    showManagerHiring,
+    managerCandidates,
+    openManagerHiring,
+    selectManager,
+    cancelManagerHiring,
+    handleFireManager,
+    dismissGigResult,
   } = useGame();
 
   // Not started - show start screen
@@ -64,7 +79,27 @@ export default function Home() {
         weekReflection={weekReflection}
         onSelectAction={takeAction}
         onFireBandmate={handleFireBandmate}
+        onHireManager={openManagerHiring}
+        onFireManager={handleFireManager}
       />
+
+      {/* Gig Outcome Modal - show when a gig resolves */}
+      {pendingGigResult && (
+        <GigOutcomeModal
+          gigResult={pendingGigResult}
+          onContinue={dismissGigResult}
+        />
+      )}
+
+      {/* Manager Hiring Modal - show when looking for manager */}
+      {showManagerHiring && (
+        <ManagerHireModal
+          candidates={managerCandidates}
+          playerMoney={gameState.player.money}
+          onSelectManager={selectManager}
+          onCancel={cancelManagerHiring}
+        />
+      )}
 
       {/* Event Modal - show when event triggered but not yet resolved */}
       {pendingEvent && !eventOutcome && (
@@ -99,6 +134,23 @@ export default function Home() {
           pending={pendingNaming}
           onConfirm={confirmNaming}
           onCancel={cancelNaming}
+        />
+      )}
+
+      {/* Temptation Modal - show when a temptation triggers */}
+      {pendingTemptation && !temptationOutcome && (
+        <TemptationModal
+          temptation={pendingTemptation}
+          onChoice={handleTemptationChoice}
+        />
+      )}
+
+      {/* Temptation Outcome - show after player makes choice */}
+      {pendingTemptation && temptationOutcome && (
+        <TemptationOutcome
+          temptation={pendingTemptation}
+          choice={temptationOutcome}
+          onContinue={dismissTemptationOutcome}
         />
       )}
     </>

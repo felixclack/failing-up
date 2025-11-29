@@ -389,6 +389,11 @@ export function createGameState(options: CreateGameOptions): GameState {
     albums: [],
     labelDeals: [],
 
+    // Manager and gig system
+    manager: null,
+    upcomingGig: null,
+    lastGigResult: null,
+
     // Rival bands and industry news
     rivalBands,
     newsItems: [],

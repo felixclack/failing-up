@@ -13,7 +13,7 @@ export const moreGigEvents: GameEvent[] = [
     id: 'EV_POWER_OUTAGE',
     triggerConditions: {},
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The venue loses power mid-set. Total darkness. The crowd starts chanting your name.',
     choices: [
       {
@@ -34,7 +34,7 @@ export const moreGigEvents: GameEvent[] = [
     id: 'EV_CROWD_SURFING_FAIL',
     triggerConditions: { minFans: 500 },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'You attempt a crowd surf. The crowd isn\'t ready. You hit the floor hard.',
     choices: [
       {
@@ -55,7 +55,7 @@ export const moreGigEvents: GameEvent[] = [
     id: 'EV_VENUE_DOUBLE_BOOKED',
     triggerConditions: {},
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'You show up to the venue and there\'s another band setting up. The owner forgot about you.',
     choices: [
       {
@@ -82,7 +82,7 @@ export const moreGigEvents: GameEvent[] = [
     id: 'EV_ENCORE_DEMAND',
     triggerConditions: { minFans: 1000, minHype: 40 },
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The crowd won\'t stop chanting. They want an encore. You\'ve already played everything.',
     choices: [
       {
@@ -109,7 +109,7 @@ export const moreGigEvents: GameEvent[] = [
     id: 'EV_FIGHT_BREAKS_OUT',
     triggerConditions: { minFans: 300 },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'A fight breaks out in the pit. Security is overwhelmed. Do you keep playing?',
     choices: [
       {
@@ -137,7 +137,7 @@ export const moreMoneyEvents: GameEvent[] = [
     id: 'EV_VAN_BREAKDOWN',
     triggerConditions: {},
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'The van won\'t start. Smoke\'s coming from under the hood. You\'ve got a show tonight.',
     choices: [
       {
@@ -312,7 +312,7 @@ export const moreHealthEvents: GameEvent[] = [
     id: 'EV_PANIC_ATTACK',
     triggerConditions: { maxStability: 30, minBurnout: 50 },
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'Backstage before a show, your heart races. You can\'t breathe. Everything\'s closing in.',
     choices: [
       {
@@ -391,7 +391,7 @@ export const moreHealthEvents: GameEvent[] = [
     id: 'EV_SUBSTANCE_OFFERED',
     triggerConditions: { minFans: 1000 },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'Someone backstage offers you pills. "Everyone\'s doing it. It\'ll help you perform."',
     choices: [
       {
@@ -419,7 +419,7 @@ export const moreSceneEvents: GameEvent[] = [
     id: 'EV_CELEBRITY_SPOTTED',
     triggerConditions: { minFans: 5000, minHype: 50 },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'A famous musician is in the crowd tonight. Word spreads backstage fast.',
     choices: [
       {

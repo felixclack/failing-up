@@ -103,17 +103,100 @@ export const SALES_TIER_DATA: Record<SalesTier, { minSales: number; royaltyMulti
   diamond: { minSales: 2000000, royaltyMultiplier: 5.0 },
 };
 
-// Tour economics
-export const TOUR_COSTS = {
-  vanRental: 200,
-  gasPerWeek: 150,
-  lodgingPerWeek: 300,
-  foodPerWeek: 200,
-  crewPerWeek: 500,
+// =============================================================================
+// Tour Economics (UK Realistic Costs in £)
+// =============================================================================
+
+// Tour type configurations
+export type TourType = 'diy' | 'small' | 'support' | 'headline';
+
+export interface TourConfig {
+  type: TourType;
+  name: string;
+  description: string;
+  weeksRequired: number;
+  weeklyBaseCost: number;     // Base weekly costs (van, petrol, food, lodging)
+  upfrontCost: number;        // Initial booking/deposit costs
+  minFans: number;            // Minimum fans required
+  minMoney: number;           // Minimum money needed to start
+  requiresLabel: boolean;     // Needs label support
+  fanMultiplier: number;      // Fan gain multiplier (support = exposure bonus)
+  revenueMultiplier: number;  // How much you earn vs costs
+}
+
+export const TOUR_CONFIGS: Record<TourType, TourConfig> = {
+  diy: {
+    type: 'diy',
+    name: 'DIY Van Tour',
+    description: 'Rough it in a transit van, kip on floors, live on service station sarnies.',
+    weeksRequired: 2,
+    weeklyBaseCost: 400,       // ~£400/week: cheap van share, petrol, crap food
+    upfrontCost: 500,          // Deposit on van, first venue payments
+    minFans: 500,
+    minMoney: 1500,            // Need £1500 minimum to attempt
+    requiresLabel: false,
+    fanMultiplier: 1.0,
+    revenueMultiplier: 0.8,    // Keep most of what you earn
+  },
+  small: {
+    type: 'small',
+    name: 'Small Venue Tour',
+    description: 'Proper tour: decent van, B&Bs, actual rider. Exhausting but real.',
+    weeksRequired: 2,
+    weeklyBaseCost: 800,       // £800/week: van, hotels, food, petrol
+    upfrontCost: 1500,         // Deposits, promotion, merch stock
+    minFans: 2000,
+    minMoney: 4000,
+    requiresLabel: false,
+    fanMultiplier: 1.3,
+    revenueMultiplier: 1.0,
+  },
+  support: {
+    type: 'support',
+    name: 'Support Tour',
+    description: 'Opening for a bigger band. Less control, but massive exposure.',
+    weeksRequired: 3,
+    weeklyBaseCost: 300,       // Less costs - headliner covers some
+    upfrontCost: 500,          // Travel to join tour
+    minFans: 3000,
+    minMoney: 2000,
+    requiresLabel: false,      // Can be offered without label
+    fanMultiplier: 2.5,        // Big exposure bonus
+    revenueMultiplier: 0.5,    // Less money but worth it for exposure
+  },
+  headline: {
+    type: 'headline',
+    name: 'Headline Tour',
+    description: 'Your name on the marquee. Tour bus, proper crew, the works.',
+    weeksRequired: 4,
+    weeklyBaseCost: 2000,      // £2000/week: bus, crew, hotels, rider
+    upfrontCost: 5000,         // Tour manager, promotion, production
+    minFans: 10000,
+    minMoney: 15000,
+    requiresLabel: true,       // Need label backing for this scale
+    fanMultiplier: 1.5,
+    revenueMultiplier: 1.5,    // Bigger venues, bigger guarantees
+  },
 };
 
-export const TOUR_BASE_GUARANTEE = 500; // Base per-show guarantee
-export const MERCH_PROFIT_PER_FAN = 0.02; // $0.02 per fan per week on tour
+// Per-show guarantees scale with tour type and fan base
+export const TOUR_BASE_GUARANTEE: Record<TourType, number> = {
+  diy: 100,       // £100 base per show
+  small: 250,     // £250 base per show
+  support: 150,   // £150 base (but exposure matters more)
+  headline: 800,  // £800 base per show
+};
+
+export const MERCH_PROFIT_PER_FAN = 0.03; // £0.03 per fan per week on tour
+
+// Legacy flat costs for backward compatibility
+export const TOUR_COSTS = {
+  vanRental: 150,
+  gasPerWeek: 100,
+  lodgingPerWeek: 250,
+  foodPerWeek: 150,
+  crewPerWeek: 400,
+};
 
 // =============================================================================
 // Label Deal System
@@ -497,7 +580,9 @@ export function calculateTourWeek(
   const totalFans = getTotalFans(player);
   const fanMultiplier = Math.log10(Math.max(100, totalFans)) / 2;
   const hypeMultiplier = 1 + (player.hype / 100);
-  const showGuarantee = Math.floor(TOUR_BASE_GUARANTEE * fanMultiplier * hypeMultiplier);
+  // Use 'small' tour base guarantee as default
+  const baseGuarantee = TOUR_BASE_GUARANTEE['small'];
+  const showGuarantee = Math.floor(baseGuarantee * fanMultiplier * hypeMultiplier);
 
   // Multiple shows per week
   const showsPerWeek = 4;

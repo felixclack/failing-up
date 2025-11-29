@@ -171,11 +171,11 @@ describe('turn', () => {
       const state1 = createGameState({ playerName: 'Test', seed: 12345 });
       const state2 = createGameState({ playerName: 'Test', seed: 12345 });
 
-      const result1 = processTurn(state1, 'PLAY_LOCAL_GIG');
-      const result2 = processTurn(state2, 'PLAY_LOCAL_GIG');
+      const result1 = processTurn(state1, 'PARTY');
+      const result2 = processTurn(state2, 'PARTY');
 
       expect(result1.newState.player.money).toBe(result2.newState.player.money);
-      expect(result1.newState.player.coreFans).toBe(result2.newState.player.coreFans);
+      expect(result1.newState.player.hype).toBe(result2.newState.player.hype);
       expect(result1.actionResult).toBe(result2.actionResult);
     });
   });

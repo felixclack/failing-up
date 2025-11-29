@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption } from '@/engine/types';
+import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption, Temptation, TemptationChoice, Manager, GigResult } from '@/engine/types';
 import { createGameState, CreateGameOptions } from '@/engine/state';
 import { processTurnWithEvents } from '@/engine/turn';
 import { getAvailableActions, generateSongTitle } from '@/engine/actions';
@@ -9,7 +9,11 @@ import { applyEventChoice } from '@/engine/events';
 import { fireBandmate } from '@/engine/band';
 import { generateAlbumTitle } from '@/engine/economy';
 import { createRandom } from '@/engine/random';
+import { applyStatDeltas } from '@/engine/state';
 import { ALL_EVENTS } from '@/data/events';
+import { ALL_TEMPTATIONS, canTemptationTrigger } from '@/data/temptations';
+import { generateManagerCandidates, hireManager, fireManager } from '@/engine/manager';
+import { getTotalFans } from '@/engine/state';
 
 // Studio options with cost and quality tradeoffs
 export const STUDIO_OPTIONS: StudioOption[] = [
@@ -53,6 +57,10 @@ export interface UseGameReturn {
   pendingEvent: GameEvent | null;
   eventOutcome: EventChoice | null;
 
+  // Temptation state
+  pendingTemptation: Temptation | null;
+  temptationOutcome: TemptationChoice | null;
+
   // Naming state
   pendingNaming: PendingNaming | null;
 
@@ -60,17 +68,33 @@ export interface UseGameReturn {
   flavorText: string | null;
   weekReflection: string | null;
 
+  // Gig state
+  pendingGigResult: GigResult | null;
+
+  // Manager state
+  showManagerHiring: boolean;
+  managerCandidates: Manager[];
+
   // Actions
   startGame: (options: CreateGameOptions) => void;
   takeAction: (actionId: ActionId) => void;
   handleEventChoice: (choice: EventChoice) => void;
   dismissEventOutcome: () => void;
+  handleTemptationChoice: (choice: TemptationChoice) => void;
+  dismissTemptationOutcome: () => void;
   restartGame: () => void;
   newGame: () => void;
   handleFireBandmate: (bandmateId: string) => void;
   selectStudio: (studioQuality: StudioQuality) => void;
   confirmNaming: (customName: string | null) => void;
   cancelNaming: () => void;
+
+  // Manager actions
+  openManagerHiring: () => void;
+  selectManager: (manager: Manager) => void;
+  cancelManagerHiring: () => void;
+  handleFireManager: () => void;
+  dismissGigResult: () => void;
 
   // Computed
   availableActions: ActionId[];
@@ -91,6 +115,18 @@ export function useGame(): UseGameReturn {
   const [pendingNaming, setPendingNaming] = useState<PendingNaming | null>(null);
   const [pendingNamingTurnResult, setPendingNamingTurnResult] = useState<TurnResult | null>(null);
 
+  // Temptation state
+  const [pendingTemptation, setPendingTemptation] = useState<Temptation | null>(null);
+  const [temptationOutcome, setTemptationOutcome] = useState<TemptationChoice | null>(null);
+  const [temptationCooldowns, setTemptationCooldowns] = useState<Record<string, number>>({});
+
+  // Gig result state
+  const [pendingGigResult, setPendingGigResult] = useState<GigResult | null>(null);
+
+  // Manager hiring state
+  const [showManagerHiring, setShowManagerHiring] = useState(false);
+  const [managerCandidates, setManagerCandidates] = useState<Manager[]>([]);
+
   const startGame = useCallback((options: CreateGameOptions) => {
     const newState = createGameState(options);
     setGameState(newState);
@@ -100,12 +136,56 @@ export function useGame(): UseGameReturn {
     setEventOutcome(null);
     setPendingNaming(null);
     setPendingNamingTurnResult(null);
+    setPendingTemptation(null);
+    setTemptationOutcome(null);
+    setTemptationCooldowns({});
+    setPendingGigResult(null);
+    setShowManagerHiring(false);
+    setManagerCandidates([]);
   }, []);
+
+  // Helper to check and trigger a random temptation
+  const checkForTemptation = useCallback((state: GameState): Temptation | null => {
+    const rng = createRandom(state.seed + state.week + 5000);
+
+    // Decrease cooldowns
+    const newCooldowns: Record<string, number> = {};
+    for (const [id, cooldown] of Object.entries(temptationCooldowns)) {
+      if (cooldown > 1) {
+        newCooldowns[id] = cooldown - 1;
+      }
+    }
+    setTemptationCooldowns(newCooldowns);
+
+    // Filter eligible temptations
+    const eligible = ALL_TEMPTATIONS.filter(t => {
+      // Check cooldown
+      if (temptationCooldowns[t.id] && temptationCooldowns[t.id] > 0) return false;
+      // Check conditions
+      return canTemptationTrigger(t, {
+        player: state.player,
+        week: state.week,
+        coreFans: state.player.coreFans,
+      });
+    });
+
+    if (eligible.length === 0) return null;
+
+    // Roll for each eligible temptation
+    for (const temptation of eligible) {
+      if (rng.next() < temptation.baseChance) {
+        return temptation;
+      }
+    }
+
+    return null;
+  }, [temptationCooldowns]);
 
   const takeAction = useCallback((actionId: ActionId) => {
     if (!gameState || gameState.isGameOver) return;
     if (pendingEvent) return; // Can't act while event pending
     if (pendingNaming) return; // Can't act while naming pending
+    if (pendingTemptation) return; // Can't act while temptation pending
 
     // Handle all RECORD actions - show studio selection first
     if (actionId === 'RECORD_SINGLE' || actionId === 'RECORD_EP' || actionId === 'RECORD_ALBUM') {
@@ -222,6 +302,14 @@ export function useGame(): UseGameReturn {
       return;
     }
 
+    // If there was a gig this turn, show the result first
+    if (result.gigResult) {
+      setPendingGigResult(result.gigResult);
+      setPendingEventState(result.newState);
+      setLastTurnResult(result);
+      return; // Wait for gig result dismissal before showing events
+    }
+
     // If there's a triggered event, show it before finalizing
     if (result.triggeredEvents.length > 0) {
       setPendingEvent(result.triggeredEvents[0]);
@@ -231,8 +319,14 @@ export function useGame(): UseGameReturn {
       // No event, just update state
       setGameState(result.newState);
       setLastTurnResult(result);
+
+      // Check for temptation
+      const temptation = checkForTemptation(result.newState);
+      if (temptation) {
+        setPendingTemptation(temptation);
+      }
     }
-  }, [gameState, pendingEvent, pendingNaming]);
+  }, [gameState, pendingEvent, pendingNaming, pendingTemptation, pendingGigResult, checkForTemptation]);
 
   const handleEventChoice = useCallback((choice: EventChoice) => {
     if (!pendingEvent || !pendingEventState) return;
@@ -264,7 +358,76 @@ export function useGame(): UseGameReturn {
     setPendingEvent(null);
     setEventOutcome(null);
     setPendingEventState(null);
-  }, [pendingEventState, lastTurnResult, pendingEvent, eventOutcome]);
+
+    // Check for temptation after event resolves
+    const temptation = checkForTemptation(pendingEventState);
+    if (temptation) {
+      setPendingTemptation(temptation);
+    }
+  }, [pendingEventState, lastTurnResult, pendingEvent, eventOutcome, checkForTemptation]);
+
+  // Temptation handlers
+  const handleTemptationChoice = useCallback((choice: TemptationChoice) => {
+    if (!pendingTemptation || !gameState) return;
+
+    // Apply the choice effects
+    const newPlayer = applyStatDeltas(gameState.player, choice.effects);
+    const newState: GameState = {
+      ...gameState,
+      player: newPlayer,
+    };
+
+    // Set cooldown for this temptation
+    if (pendingTemptation.cooldown) {
+      setTemptationCooldowns(prev => ({
+        ...prev,
+        [pendingTemptation.id]: pendingTemptation.cooldown!,
+      }));
+    }
+
+    // Update state and show outcome
+    setGameState(newState);
+    setTemptationOutcome(choice);
+  }, [pendingTemptation, gameState]);
+
+  const dismissTemptationOutcome = useCallback(() => {
+    setPendingTemptation(null);
+    setTemptationOutcome(null);
+  }, []);
+
+  // Manager handlers
+  const openManagerHiring = useCallback(() => {
+    if (!gameState) return;
+    const rng = createRandom(gameState.seed + gameState.week + 6000);
+    const totalFans = getTotalFans(gameState.player);
+    const candidates = generateManagerCandidates(3, totalFans, gameState.player.hype, rng);
+    setManagerCandidates(candidates);
+    setShowManagerHiring(true);
+  }, [gameState]);
+
+  const selectManager = useCallback((manager: Manager) => {
+    if (!gameState) return;
+    const newState = hireManager(gameState, manager);
+    setGameState(newState);
+    setShowManagerHiring(false);
+    setManagerCandidates([]);
+  }, [gameState]);
+
+  const cancelManagerHiring = useCallback(() => {
+    setShowManagerHiring(false);
+    setManagerCandidates([]);
+  }, []);
+
+  const handleFireManager = useCallback(() => {
+    if (!gameState || !gameState.manager) return;
+    const newState = fireManager(gameState);
+    setGameState(newState);
+  }, [gameState]);
+
+  // Gig result handler
+  const dismissGigResult = useCallback(() => {
+    setPendingGigResult(null);
+  }, []);
 
   // Studio selection handler
   const selectStudio = useCallback((studioQuality: StudioQuality) => {
@@ -435,6 +598,9 @@ export function useGame(): UseGameReturn {
       setPendingEventState(null);
       setPendingNaming(null);
       setPendingNamingTurnResult(null);
+      setPendingTemptation(null);
+      setTemptationOutcome(null);
+      setTemptationCooldowns({});
     }
   }, [lastOptions]);
 
@@ -447,6 +613,9 @@ export function useGame(): UseGameReturn {
     setPendingEventState(null);
     setPendingNaming(null);
     setPendingNamingTurnResult(null);
+    setPendingTemptation(null);
+    setTemptationOutcome(null);
+    setTemptationCooldowns({});
   }, []);
 
   const handleFireBandmate = useCallback((bandmateId: string) => {
@@ -483,19 +652,31 @@ export function useGame(): UseGameReturn {
     lastTurnResult,
     pendingEvent,
     eventOutcome,
+    pendingTemptation,
+    temptationOutcome,
     pendingNaming,
     flavorText,
     weekReflection,
+    pendingGigResult,
+    showManagerHiring,
+    managerCandidates,
     startGame,
     takeAction,
     handleEventChoice,
     dismissEventOutcome,
+    handleTemptationChoice,
+    dismissTemptationOutcome,
     restartGame,
     newGame,
     handleFireBandmate,
     selectStudio,
     confirmNaming,
     cancelNaming,
+    openManagerHiring,
+    selectManager,
+    cancelManagerHiring,
+    handleFireManager,
+    dismissGigResult,
     availableActions,
     currentWeekLog,
   };

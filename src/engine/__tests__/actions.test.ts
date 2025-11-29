@@ -22,11 +22,6 @@ describe('actions', () => {
       expect(ACTIONS.WRITE.requirements.onTour).toBe(false);
     });
 
-    it('defines PLAY_LOCAL_GIG action', () => {
-      expect(ACTIONS.PLAY_LOCAL_GIG).toBeDefined();
-      expect(ACTIONS.PLAY_LOCAL_GIG.hasSpecialLogic).toBe(true);
-      expect(ACTIONS.PLAY_LOCAL_GIG.requirements.minHealth).toBe(20);
-    });
   });
 
   describe('isActionAvailable', () => {
@@ -47,12 +42,6 @@ describe('actions', () => {
       expect(isActionAvailable('WRITE', state)).toBe(false);
     });
 
-    it('returns false for PLAY_LOCAL_GIG when health too low', () => {
-      const state = createGameState({ playerName: 'Test', seed: 1 });
-      state.player.health = 10;
-      expect(isActionAvailable('PLAY_LOCAL_GIG', state)).toBe(false);
-    });
-
     it('returns false for TOUR without label deal', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
       expect(state.player.flags.hasLabelDeal).toBe(false);
@@ -67,7 +56,6 @@ describe('actions', () => {
 
       expect(available).toContain('REST');
       expect(available).toContain('WRITE');
-      expect(available).toContain('PLAY_LOCAL_GIG');
       expect(available).toContain('PARTY');
       expect(available).toContain('SIDE_JOB');
     });
@@ -128,41 +116,6 @@ describe('actions', () => {
         const result = executeAction('WRITE', state, rng);
 
         expect(result.statChanges.skill).toBeGreaterThan(0);
-      });
-    });
-
-    describe('PLAY_LOCAL_GIG', () => {
-      it('returns success with money', () => {
-        const state = createGameState({ playerName: 'Test', seed: 1 });
-        const rng = createRandom(1);
-        const result = executeAction('PLAY_LOCAL_GIG', state, rng);
-
-        expect(result.success).toBe(true);
-        expect(result.statChanges.money).toBeGreaterThan(0);
-      });
-
-      it('returns variable results based on seed', () => {
-        const state1 = createGameState({ playerName: 'Test', seed: 12345 });
-        const state2 = createGameState({ playerName: 'Test', seed: 99999 });
-
-        const result1 = executeAction('PLAY_LOCAL_GIG', state1, createRandom(12345));
-        const result2 = executeAction('PLAY_LOCAL_GIG', state2, createRandom(99999));
-
-        // Results should differ with significantly different seeds
-        // Both money amounts should vary OR messages should differ
-        expect(
-          result1.message !== result2.message ||
-          result1.statChanges.money !== result2.statChanges.money
-        ).toBe(true);
-      });
-
-      it('fails when health is too low', () => {
-        const state = createGameState({ playerName: 'Test', seed: 1 });
-        state.player.health = 10;
-        const rng = createRandom(1);
-        const result = executeAction('PLAY_LOCAL_GIG', state, rng);
-
-        expect(result.success).toBe(false);
       });
     });
 

@@ -434,12 +434,7 @@ export function getActionMessage(context: NarrativeContext): string {
       return pick(messages);
     }
 
-    case 'PLAY_LOCAL_GIG': {
-      const messages = player.hype > 30 || (fansGained && fansGained > 10)
-        ? PLAY_LOCAL_GIG_MESSAGES.good
-        : PLAY_LOCAL_GIG_MESSAGES.rough;
-      return pick(messages);
-    }
+    // PLAY_LOCAL_GIG removed - gigs now handled by manager system
 
     case 'RECORD_SINGLE': {
       const msg = pick(RECORD_SINGLE_MESSAGES);

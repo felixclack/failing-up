@@ -49,20 +49,6 @@ export const ACTIONS: Record<ActionId, Action> = {
     hasSpecialLogic: true, // Can produce a song
   },
 
-  PLAY_LOCAL_GIG: {
-    id: 'PLAY_LOCAL_GIG',
-    label: 'Play Local Gig',
-    description: 'Play a show at a local venue. Small money, builds local following.',
-    requirements: {
-      minHealth: 20,
-    },
-    baseEffects: {
-      skill: 1,
-      burnout: 1,
-    },
-    hasSpecialLogic: true, // Variable money/fans based on performance
-  },
-
   REHEARSE: {
     id: 'REHEARSE',
     label: 'Rehearse',
@@ -413,62 +399,7 @@ function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
   }
 }
 
-/**
- * Execute Play Local Gig - variable money/fans based on performance
- * Payouts and fan gains modified by difficulty
- */
-function executePlayLocalGig(state: GameState, rng: RandomGenerator): ActionResult {
-  const { player, bandmates, difficultySettings } = state;
-
-  // Calculate performance quality
-  const bandTalent = bandmates.length > 0
-    ? bandmates.filter(b => b.status === 'active').reduce((sum, b) => sum + b.talent, 0) / bandmates.length
-    : 50;
-
-  const performanceBase = (player.skill + bandTalent) / 2;
-  const performanceRoll = rng.nextInt(-15, 15);
-  const performance = clampStat(performanceBase + performanceRoll);
-
-  // Determine turnout based on hype and local fans
-  const totalFans = getTotalFans(player);
-  const turnoutBase = Math.min(player.hype + Math.floor(totalFans / 100), 100);
-  const turnoutRoll = rng.nextInt(-10, 10);
-  const turnout = clampStat(turnoutBase + turnoutRoll);
-
-  // Calculate rewards (base values, then apply difficulty multiplier)
-  const basePay = 50;
-  const turnoutBonus = Math.floor(turnout * 1.5);
-  const performanceBonus = performance > 60 ? Math.floor((performance - 60) * 2) : 0;
-  const baseMoneyEarned = basePay + turnoutBonus + performanceBonus;
-  const totalMoney = getGigPayout(baseMoneyEarned, difficultySettings);
-
-  const baseFansGained = Math.floor((performance / 100) * (turnout / 100) * rng.nextInt(5, 20));
-  const fansGained = getFanGain(baseFansGained, difficultySettings);
-  const hypeGain = performance > 70 ? rng.nextInt(2, 5) : (performance < 40 ? rng.nextInt(-3, 0) : 0);
-
-  // Build result message
-  let message: string;
-  if (performance >= 80) {
-    message = `Killer show! The crowd went wild. Earned $${totalMoney}.`;
-  } else if (performance >= 60) {
-    message = `Solid gig. The audience seemed into it. Earned $${totalMoney}.`;
-  } else if (performance >= 40) {
-    message = `Rough night. A few technical issues but you got through it. Earned $${totalMoney}.`;
-  } else {
-    message = `Disaster. Half the crowd left early. Still got $${totalMoney} from the door.`;
-  }
-
-  return {
-    success: true,
-    message,
-    statChanges: {
-      ...ACTIONS.PLAY_LOCAL_GIG.baseEffects,
-      money: totalMoney,
-      fans: fansGained,
-      hype: hypeGain,
-    },
-  };
-}
+// PLAY_LOCAL_GIG has been removed - gigs are now booked by managers
 
 /**
  * Execute any action and return the result
@@ -500,9 +431,6 @@ export function executeAction(
   switch (actionId) {
     case 'WRITE':
       return executeWrite(state, rng);
-
-    case 'PLAY_LOCAL_GIG':
-      return executePlayLocalGig(state, rng);
 
     case 'RELEASE_SINGLE':
       return executeReleaseSingle(state, rng);

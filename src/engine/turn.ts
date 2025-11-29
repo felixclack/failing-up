@@ -60,6 +60,11 @@ import {
   generateWeeklyNews,
   applyNewsImpacts,
 } from './news';
+import {
+  tryBookGig,
+  resolveGig,
+} from './manager';
+import { GigResult } from './types';
 
 // =============================================================================
 // Constants
@@ -507,6 +512,28 @@ export function processTurnWithEvents(
     }
   }
 
+  // 3.5. Resolve gig if there's one scheduled for this week
+  let gigResult: GigResult | undefined;
+  if (newState.upcomingGig && newState.upcomingGig.week === state.week) {
+    const gigRng = createRandom(state.seed + state.week + 2000);
+    gigResult = resolveGig(newState, newState.upcomingGig, gigRng);
+
+    // Apply gig stat changes
+    newState = {
+      ...newState,
+      player: {
+        ...newState.player,
+        money: newState.player.money + gigResult.earnings,
+        skill: Math.min(100, newState.player.skill + gigResult.skillGain),
+        hype: Math.max(0, Math.min(100, newState.player.hype + gigResult.hypeChange)),
+        cred: Math.max(0, Math.min(100, newState.player.cred + gigResult.credChange)),
+        coreFans: newState.player.coreFans + gigResult.fansGained,
+      },
+      lastGigResult: gigResult,
+      upcomingGig: null, // Clear the gig
+    };
+  }
+
   // 4. Check and activate new arcs
   newState = checkAndActivateArcs(newState, ALL_ARCS);
 
@@ -564,6 +591,20 @@ export function processTurnWithEvents(
 
   // 7. Apply end-of-week stat updates
   newState = applyEndOfWeekUpdates(newState);
+
+  // 7.5 Try to book a gig for next week (if no gig already scheduled)
+  if (!newState.upcomingGig && !newState.player.flags.onTour) {
+    const bookingRng = createRandom(state.seed + state.week + 4000);
+    const bookedGig = tryBookGig(newState, bookingRng);
+    if (bookedGig) {
+      // Schedule for next week
+      bookedGig.week = newState.week + 1;
+      newState = {
+        ...newState,
+        upcomingGig: bookedGig,
+      };
+    }
+  }
 
   // 8. Advance week counter
   newState = {
@@ -634,6 +675,7 @@ export function processTurnWithEvents(
     gameOverReason: newState.gameOverReason,
     flavorText,
     weekReflection,
+    gigResult,
   };
 }
 

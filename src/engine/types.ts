@@ -29,7 +29,6 @@ export type ActionId =
   | 'REST'
   | 'WRITE'
   | 'REHEARSE'
-  | 'PLAY_LOCAL_GIG'
   | 'TOUR'
   | 'RECORD_SINGLE'
   | 'RECORD_EP'
@@ -64,6 +63,15 @@ export type FameTier = 'local' | 'regional' | 'national' | 'star' | 'legend';
 // News item types
 export type NewsType = 'release' | 'tour' | 'scandal' | 'breakup' | 'signing' |
                        'rivalry' | 'industry' | 'death' | 'comeback' | 'theft';
+
+// Manager status
+export type ManagerStatus = 'active' | 'fired' | 'quit';
+
+// Venue types - progression from pubs to major venues
+export type VenueType = 'pub' | 'club' | 'small_venue' | 'support_slot' | 'headline' | 'festival';
+
+// Gig outcome quality
+export type GigOutcome = 'disaster' | 'poor' | 'decent' | 'good' | 'great' | 'legendary';
 
 // =============================================================================
 // Difficulty Settings
@@ -146,6 +154,56 @@ export interface Bandmate {
   vice: number;        // 0-100, tendency toward destructive behavior
   loyalty: number;     // 0-100, willingness to stick with you
   status: BandmateStatus;
+}
+
+export interface Manager {
+  id: string;
+  name: string;
+  bookingSkill: number;    // 0-100, affects gig quality and frequency
+  connections: number;     // 0-100, affects venue tier access
+  reliability: number;     // 0-100, chance they actually deliver gigs
+  cut: number;             // 0.10-0.25, percentage of gig earnings they take
+  reputation: number;      // 0-100, affects industry perception
+  status: ManagerStatus;
+  weekHired: number;       // When they joined
+}
+
+export interface Venue {
+  id: string;
+  name: string;
+  type: VenueType;
+  capacity: number;        // How many people fit
+  prestige: number;        // 0-100, affects cred gain
+  basePay: number;         // Base payment for playing
+  // Location flavor
+  city?: string;
+}
+
+export interface Gig {
+  id: string;
+  venue: Venue;
+  week: number;            // When the gig is scheduled
+  isSupport: boolean;      // Support slot for bigger band
+  headlinerName?: string;  // If support, who are we opening for
+  expectedTurnout: number; // Estimated attendance
+  guaranteedPay: number;   // What manager negotiated
+}
+
+export interface GigResult {
+  gig: Gig;
+  outcome: GigOutcome;
+  actualTurnout: number;
+  performance: number;     // 0-100, how well you played
+  earnings: number;        // After manager cut
+  managerCut: number;      // What manager took
+  // Stat changes from the gig
+  fansGained: number;
+  hypeChange: number;
+  credChange: number;
+  skillGain: number;
+  // Narrative
+  headline: string;        // Short summary
+  description: string;     // Detailed narrative
 }
 
 export interface Song {
@@ -361,6 +419,53 @@ export interface GameEvent {
 }
 
 // =============================================================================
+// Temptations (forced choice interrupts)
+// =============================================================================
+
+export interface TemptationChoice {
+  id: 'accept' | 'decline';
+  label: string;
+  effects: StatDeltas;
+  resultText: string;
+}
+
+export interface Temptation {
+  id: string;
+  // Who or what is tempting you
+  source: 'bandmate' | 'fan' | 'promoter' | 'dealer' | 'journalist' | 'label' | 'self';
+  // The setup text
+  prompt: string;
+  // What's being offered
+  offer: string;
+  // Chance per turn this can trigger (0-1)
+  baseChance: number;
+  // Conditions that affect when this can trigger
+  conditions?: {
+    minWeek?: number;
+    minAddiction?: number;
+    maxAddiction?: number;
+    minMoney?: number;
+    maxMoney?: number;
+    minHype?: number;
+    minFans?: number;
+    minBurnout?: number;
+    maxBurnout?: number;
+    minStability?: number;
+    maxStability?: number;
+    minHealth?: number;
+    maxHealth?: number;
+    hasLabelDeal?: boolean;
+    inStudio?: boolean;
+    onTour?: boolean;
+  };
+  // The two choices
+  accept: TemptationChoice;
+  decline: TemptationChoice;
+  // Cooldown in weeks before this can trigger again
+  cooldown?: number;
+}
+
+// =============================================================================
 // Arcs
 // =============================================================================
 
@@ -430,6 +535,13 @@ export interface GameState {
   albums: Album[];
   labelDeals: LabelDeal[];
 
+  // Manager - books gigs for the band
+  manager: Manager | null;
+
+  // Gig system - manager books gigs, results shown after
+  upcomingGig: Gig | null;       // Next gig the manager has booked
+  lastGigResult: GigResult | null; // Result of most recent gig
+
   // Rival bands and industry news
   rivalBands: RivalBand[];
   newsItems: NewsItem[];
@@ -484,6 +596,8 @@ export interface TurnResult {
   // Narrative flavor
   flavorText?: string;       // Small narrative moment (no choice required)
   weekReflection?: string;   // End-of-week narrator reflection
+  // Gig result (if a gig was played this week)
+  gigResult?: GigResult;
 }
 
 export interface ActionResult {

@@ -182,7 +182,7 @@ const moneyEvents: GameEvent[] = [
       minHype: 20,
     },
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'A local promoter approaches you after a show. "I can get you better gigs, bigger crowds. For a cut, of course."',
     choices: [
       {
@@ -211,7 +211,7 @@ const moneyEvents: GameEvent[] = [
       minFans: 200,
     },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'A superfan approaches you after the show. "I believe in what you\'re doing. Here, take this." They hand you some cash.',
     choices: [
       {
@@ -291,7 +291,7 @@ const healthEvents: GameEvent[] = [
     id: 'EV_MINOR_INJURY',
     triggerConditions: {},
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'You twist your ankle jumping off the stage. The adrenaline masked it, but now it\'s swelling up.',
     choices: [
       {
@@ -347,7 +347,7 @@ const gigEvents: GameEvent[] = [
     id: 'EV_HECKLER',
     triggerConditions: {},
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'Some drunk in the front row won\'t shut up. They\'re killing your vibe and the crowd\'s getting distracted.',
     choices: [
       {
@@ -374,7 +374,7 @@ const gigEvents: GameEvent[] = [
     id: 'EV_SOUND_ISSUES',
     triggerConditions: {},
     weight: 3,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'Halfway through the set, your guitar cuts out. Dead silence. The crowd waits.',
     choices: [
       {
@@ -404,7 +404,7 @@ const gigEvents: GameEvent[] = [
       minHype: 30,
     },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'After the show, someone in a sharp suit approaches. "I\'m with a label. We should talk."',
     choices: [
       {
@@ -492,7 +492,7 @@ const sceneEvents: GameEvent[] = [
       minImage: 30,
     },
     weight: 2,
-    requiredAction: 'PLAY_LOCAL_GIG',
+    // Gigs now automatic - requiredAction removed
     textIntro: 'A persistent fan won\'t leave you alone after the show. They\'re attractive, but something feels off.',
     choices: [
       {
