@@ -55,6 +55,7 @@ export const moreGigEvents: GameEvent[] = [
     id: 'EV_VENUE_DOUBLE_BOOKED',
     triggerConditions: {},
     weight: 2,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'You show up to the venue and there\'s another band setting up. The owner forgot about you.',
     choices: [
       {
@@ -310,6 +311,7 @@ export const moreHealthEvents: GameEvent[] = [
     id: 'EV_PANIC_ATTACK',
     triggerConditions: { maxStability: 30, minBurnout: 50 },
     weight: 3,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'Backstage before a show, your heart races. You can\'t breathe. Everything\'s closing in.',
     choices: [
       {
@@ -388,6 +390,7 @@ export const moreHealthEvents: GameEvent[] = [
     id: 'EV_SUBSTANCE_OFFERED',
     triggerConditions: { minFans: 1000 },
     weight: 2,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'Someone backstage offers you pills. "Everyone\'s doing it. It\'ll help you perform."',
     choices: [
       {
@@ -415,6 +418,7 @@ export const moreSceneEvents: GameEvent[] = [
     id: 'EV_CELEBRITY_SPOTTED',
     triggerConditions: { minFans: 5000, minHype: 50 },
     weight: 2,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'A famous musician is in the crowd tonight. Word spreads backstage fast.',
     choices: [
       {

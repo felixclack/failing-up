@@ -22,6 +22,7 @@ const bandConflictEvents: GameEvent[] = [
       minBandVice: 30,
     },
     weight: 3,
+    requiredAction: 'REHEARSE',
     textIntro: 'Tension boils over during rehearsal. Your guitarist and drummer are at each other\'s throats about the setlist.',
     choices: [
       {
@@ -53,6 +54,7 @@ const bandConflictEvents: GameEvent[] = [
       minBandSize: 1,
     },
     weight: 4,
+    requiredAction: 'REHEARSE',
     textIntro: 'Your bassist shows up two hours late to practice, reeking of last night\'s party.',
     choices: [
       {
@@ -178,6 +180,7 @@ const moneyEvents: GameEvent[] = [
       minHype: 20,
     },
     weight: 3,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'A local promoter approaches you after a show. "I can get you better gigs, bigger crowds. For a cut, of course."',
     choices: [
       {
@@ -206,6 +209,7 @@ const moneyEvents: GameEvent[] = [
       minFans: 200,
     },
     weight: 2,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'A superfan approaches you after the show. "I believe in what you\'re doing. Here, take this." They hand you some cash.',
     choices: [
       {
@@ -285,6 +289,7 @@ const healthEvents: GameEvent[] = [
     id: 'EV_MINOR_INJURY',
     triggerConditions: {},
     weight: 2,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'You twist your ankle jumping off the stage. The adrenaline masked it, but now it\'s swelling up.',
     choices: [
       {
@@ -485,6 +490,7 @@ const sceneEvents: GameEvent[] = [
       minImage: 30,
     },
     weight: 2,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'A persistent fan won\'t leave you alone after the show. They\'re attractive, but something feels off.',
     choices: [
       {

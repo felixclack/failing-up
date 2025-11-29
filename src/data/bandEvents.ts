@@ -12,6 +12,7 @@ export const bandEvents: GameEvent[] = [
       minBandmates: 2,
     },
     weight: 3,
+    requiredAction: 'REHEARSE',
     textIntro: 'The rehearsal devolves into a shouting match. Your guitarist wants to go heavier. Your bassist wants to go poppier. They turn to you to settle it.',
     choices: [
       {
@@ -50,6 +51,7 @@ export const bandEvents: GameEvent[] = [
       maxStability: 40,
     },
     weight: 2,
+    requiredAction: 'REHEARSE',
     textIntro: 'Your drummer corners you after practice. "I can\'t keep doing this. Either things change around here, or I\'m out."',
     choices: [
       {
@@ -150,6 +152,7 @@ export const bandEvents: GameEvent[] = [
       minStability: 50,
     },
     weight: 2,
+    requiredAction: 'REHEARSE',
     textIntro: 'Something clicks during rehearsal. Everyone\'s locked in. The sound is tighter than ever.',
     choices: [
       {
@@ -276,6 +279,7 @@ export const bandEvents: GameEvent[] = [
       minHype: 30,
     },
     weight: 3,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'The new guitarist absolutely kills it at the show. The crowd goes wild for their solo. They might be the real deal.',
     choices: [
       {
