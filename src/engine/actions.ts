@@ -96,18 +96,69 @@ export const ACTIONS: Record<ActionId, Action> = {
     hasSpecialLogic: true,
   },
 
-  RECORD: {
-    id: 'RECORD',
-    label: 'Record',
-    description: 'Hit the studio to record an album. Need songs to record first.',
+  RECORD_SINGLE: {
+    id: 'RECORD_SINGLE',
+    label: 'Record Single',
+    description: 'Quick studio session to lay down one track. Need at least 1 song.',
     requirements: {
       onTour: false,
       inStudio: false,
-      hasUnreleasedSongs: true, // Need material to record
+      minUnreleasedSongs: 1,
     },
     baseEffects: {
       skill: 1,
-      burnout: 3,
+      burnout: 1,
+      money: -100, // Studio costs
+    },
+    hasSpecialLogic: true,
+  },
+
+  RECORD_EP: {
+    id: 'RECORD_EP',
+    label: 'Record EP',
+    description: 'Book studio time for a short release. Takes 2 weeks. Need at least 4 songs.',
+    requirements: {
+      onTour: false,
+      noActiveRecording: true,
+      minUnreleasedSongs: 4,
+    },
+    baseEffects: {
+      skill: 1,
+      burnout: 2,
+      money: -150, // Initial studio booking
+    },
+    hasSpecialLogic: true,
+  },
+
+  RECORD_ALBUM: {
+    id: 'RECORD_ALBUM',
+    label: 'Record Album',
+    description: 'Book studio time for a full album. Takes 4 weeks. Need at least 8 songs.',
+    requirements: {
+      onTour: false,
+      noActiveRecording: true,
+      minUnreleasedSongs: 8,
+    },
+    baseEffects: {
+      skill: 1,
+      burnout: 2,
+      money: -200, // Initial studio booking
+    },
+    hasSpecialLogic: true,
+  },
+
+  STUDIO_WORK: {
+    id: 'STUDIO_WORK',
+    label: 'Studio Session',
+    description: 'Continue working on your recording. Keep the momentum going.',
+    requirements: {
+      onTour: false,
+      hasActiveRecording: true,
+    },
+    baseEffects: {
+      skill: 1,
+      burnout: 2,
+      money: -75, // Ongoing studio costs
     },
     hasSpecialLogic: true,
   },
@@ -243,6 +294,21 @@ export function isActionAvailable(actionId: ActionId, state: GameState): boolean
   }
 
   if (requirements.minSongs !== undefined && songs.length < requirements.minSongs) {
+    return false;
+  }
+
+  if (requirements.minUnreleasedSongs !== undefined) {
+    const unreleasedCount = songs.filter(s => !s.isReleased).length;
+    if (unreleasedCount < requirements.minUnreleasedSongs) {
+      return false;
+    }
+  }
+
+  // Check recording session requirements
+  if (requirements.hasActiveRecording && !state.recordingSession) {
+    return false;
+  }
+  if (requirements.noActiveRecording && state.recordingSession) {
     return false;
   }
 

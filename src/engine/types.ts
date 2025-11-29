@@ -31,7 +31,10 @@ export type ActionId =
   | 'REHEARSE'
   | 'PLAY_LOCAL_GIG'
   | 'TOUR'
-  | 'RECORD'
+  | 'RECORD_SINGLE'
+  | 'RECORD_EP'
+  | 'RECORD_ALBUM'
+  | 'STUDIO_WORK'  // Continue an active recording session
   | 'PROMOTE'
   | 'NETWORK'
   | 'PARTY'
@@ -267,6 +270,10 @@ export interface ActionRequirements {
   hasUnreleasedSongs?: boolean;  // Has songs that haven't been released
   hasReleasedMusic?: boolean;    // Has at least one released song or album
   minSongs?: number;             // Minimum total songs written
+  minUnreleasedSongs?: number;   // Minimum unreleased songs needed
+  // Recording session requirements
+  hasActiveRecording?: boolean;  // Must have an active recording session
+  noActiveRecording?: boolean;   // Cannot have an active recording session
 }
 
 export interface Action {
@@ -388,6 +395,32 @@ export interface WeekLog {
   statChanges: StatDeltas;
 }
 
+// =============================================================================
+// Recording Session (multi-week studio time)
+// =============================================================================
+
+// Studio quality options for recording
+export type StudioQuality = 'bedroom' | 'basic' | 'professional' | 'premium';
+
+export interface StudioOption {
+  id: StudioQuality;
+  label: string;
+  description: string;
+  costPerWeek: number;
+  qualityBonus: number;  // Added to base production value
+}
+
+export interface RecordingSession {
+  type: 'single' | 'ep' | 'album';
+  title: string;
+  songIds: string[];           // Songs being recorded
+  weeksRemaining: number;      // Weeks left in session
+  weeksTotal: number;          // Total weeks for this type
+  productionProgress: number;  // 0-100, quality builds over time
+  studioQuality: StudioQuality;
+  costPerWeek: number;
+}
+
 export interface GameState {
   // Core state
   player: Player;
@@ -400,6 +433,9 @@ export interface GameState {
   // Rival bands and industry news
   rivalBands: RivalBand[];
   newsItems: NewsItem[];
+
+  // Active recording session (multi-week)
+  recordingSession: RecordingSession | null;
 
   // Time tracking
   week: number;        // Current week (1-520)
@@ -473,13 +509,30 @@ export interface PendingSongNaming {
   generatedTitle: string;
 }
 
+export interface PendingSingleNaming {
+  type: 'single';
+  songIds: string[];
+  generatedTitle: string;
+  recordAction: 'RECORD_SINGLE';
+  studioQuality?: StudioQuality;
+}
+
 export interface PendingAlbumNaming {
   type: 'album';
   songIds: string[];
   generatedTitle: string;
+  recordAction: 'RECORD_EP' | 'RECORD_ALBUM';
+  studioQuality?: StudioQuality;
 }
 
-export type PendingNaming = PendingSongNaming | PendingAlbumNaming;
+// Studio selection flow (shown before naming for EP/Album)
+export interface PendingStudioSelection {
+  type: 'studio-selection';
+  songIds: string[];
+  recordAction: 'RECORD_SINGLE' | 'RECORD_EP' | 'RECORD_ALBUM';
+}
+
+export type PendingNaming = PendingSongNaming | PendingSingleNaming | PendingAlbumNaming | PendingStudioSelection;
 
 // =============================================================================
 // Endings

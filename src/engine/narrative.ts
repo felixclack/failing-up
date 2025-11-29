@@ -105,7 +105,21 @@ const PLAY_LOCAL_GIG_MESSAGES = {
   ],
 };
 
-const RECORD_MESSAGES = [
+const RECORD_SINGLE_MESSAGES = [
+  'Red light on. One take. "{title}" is in the can. Sometimes simple is better.',
+  'Quick session. "{title}" is done. One song closer to something real.',
+  'In and out of the studio. "{title}" exists now. One track, but it\'s yours.',
+  'Laid down "{title}" in a single session. Raw. Real. Ready.',
+];
+
+const RECORD_EP_MESSAGES = [
+  'Four tracks. Four days. "{title}" is done. Not quite an album, but more than a single. The sweet spot.',
+  'The EP\'s finished. "{title}" — proof you\'re more than a one-hit wonder.',
+  'Studio time ate through your savings, but "{title}" exists now. {trackCount} songs of pure you.',
+  'The engineer says the EP sounds tight. "{title}" is ready to meet the world.',
+];
+
+const RECORD_ALBUM_MESSAGES = [
   'Red light on. Deep breath. "{title}" exists outside your head now. It\'s real. It\'s permanent. It\'s terrifying.',
   'Studio time is expensive. Sleep is free. Guess which one you\'re getting less of. But "{title}" is done.',
   'The album\'s in the can. "{title}" — {trackCount} songs, countless hours, and whatever\'s left of your savings.',
@@ -427,11 +441,23 @@ export function getActionMessage(context: NarrativeContext): string {
       return pick(messages);
     }
 
-    case 'RECORD': {
-      const msg = pick(RECORD_MESSAGES);
+    case 'RECORD_SINGLE': {
+      const msg = pick(RECORD_SINGLE_MESSAGES);
+      return msg.replace('{title}', songTitle || 'your track');
+    }
+
+    case 'RECORD_EP': {
+      const msg = pick(RECORD_EP_MESSAGES);
+      return msg
+        .replace('{title}', songTitle || 'the EP')
+        .replace('{trackCount}', '4');
+    }
+
+    case 'RECORD_ALBUM': {
+      const msg = pick(RECORD_ALBUM_MESSAGES);
       return msg
         .replace('{title}', songTitle || 'the album')
-        .replace('{trackCount}', String(state.songs.length || 'several'));
+        .replace('{trackCount}', String(state.songs.length || '8'));
     }
 
     case 'TOUR': {

@@ -19,6 +19,15 @@ function getUnavailableReason(actionId: ActionId, state: GameState): string {
   const { requirements } = action;
   const { player, songs } = state;
 
+  // Check minimum unreleased songs (for recording actions)
+  if (requirements.minUnreleasedSongs !== undefined) {
+    const unreleased = songs.filter(s => !s.isReleased);
+    if (unreleased.length < requirements.minUnreleasedSongs) {
+      const needed = requirements.minUnreleasedSongs - unreleased.length;
+      return `Need ${needed} more song${needed > 1 ? 's' : ''}`;
+    }
+  }
+
   if (requirements.hasUnreleasedSongs) {
     const unreleased = songs.filter(s => !s.isReleased);
     if (unreleased.length === 0) {
@@ -47,6 +56,14 @@ function getUnavailableReason(actionId: ActionId, state: GameState): string {
 
   if (requirements.inStudio === false && player.flags.inStudio) {
     return 'Already in the studio';
+  }
+
+  // Recording session requirements
+  if (requirements.hasActiveRecording && !state.recordingSession) {
+    return 'No active recording';
+  }
+  if (requirements.noActiveRecording && state.recordingSession) {
+    return 'Finish current recording first';
   }
 
   return 'Requirements not met';
@@ -175,7 +192,10 @@ function getSarcasticSuggestion(player: Player, availableActions: ActionId[]): {
 function getActionCategory(actionId: ActionId): 'creative' | 'perform' | 'business' | 'lifestyle' {
   switch (actionId) {
     case 'WRITE':
-    case 'RECORD':
+    case 'RECORD_SINGLE':
+    case 'RECORD_EP':
+    case 'RECORD_ALBUM':
+    case 'STUDIO_WORK':
     case 'REHEARSE':
       return 'creative';
     case 'PLAY_LOCAL_GIG':

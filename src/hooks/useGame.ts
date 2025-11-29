@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song } from '@/engine/types';
+import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption } from '@/engine/types';
 import { createGameState, CreateGameOptions } from '@/engine/state';
 import { processTurnWithEvents } from '@/engine/turn';
 import { getAvailableActions, generateSongTitle } from '@/engine/actions';
@@ -10,6 +10,38 @@ import { fireBandmate } from '@/engine/band';
 import { generateAlbumTitle } from '@/engine/economy';
 import { createRandom } from '@/engine/random';
 import { ALL_EVENTS } from '@/data/events';
+
+// Studio options with cost and quality tradeoffs
+export const STUDIO_OPTIONS: StudioOption[] = [
+  {
+    id: 'bedroom',
+    label: 'DIY / Bedroom',
+    description: 'Record at home with basic gear. Cheap but lo-fi.',
+    costPerWeek: 0,
+    qualityBonus: 0,
+  },
+  {
+    id: 'basic',
+    label: 'Basic Studio',
+    description: 'Local rehearsal space with decent equipment.',
+    costPerWeek: 75,
+    qualityBonus: 15,
+  },
+  {
+    id: 'professional',
+    label: 'Professional Studio',
+    description: 'Real studio with an engineer. Industry standard.',
+    costPerWeek: 200,
+    qualityBonus: 30,
+  },
+  {
+    id: 'premium',
+    label: 'Premium Studio',
+    description: 'Top-tier facility with a name producer. The big leagues.',
+    costPerWeek: 500,
+    qualityBonus: 50,
+  },
+];
 
 export interface UseGameReturn {
   // State
@@ -36,6 +68,7 @@ export interface UseGameReturn {
   restartGame: () => void;
   newGame: () => void;
   handleFireBandmate: (bandmateId: string) => void;
+  selectStudio: (studioQuality: StudioQuality) => void;
   confirmNaming: (customName: string | null) => void;
   cancelNaming: () => void;
 
@@ -74,32 +107,101 @@ export function useGame(): UseGameReturn {
     if (pendingEvent) return; // Can't act while event pending
     if (pendingNaming) return; // Can't act while naming pending
 
-    // For RECORD action, show album naming first before executing
-    if (actionId === 'RECORD') {
-      // Check if player has songs to record
-      if (gameState.songs.length === 0) {
-        // No songs to record - just show a message
+    // Handle all RECORD actions - show studio selection first
+    if (actionId === 'RECORD_SINGLE' || actionId === 'RECORD_EP' || actionId === 'RECORD_ALBUM') {
+      const unreleasedSongs = gameState.songs.filter(s => !s.isReleased);
+      const songCount = actionId === 'RECORD_SINGLE' ? 1
+        : actionId === 'RECORD_EP' ? 4 : 8;
+      if (unreleasedSongs.length < songCount) return;
+
+      const songIds = unreleasedSongs.slice(0, songCount).map(s => s.id);
+
+      // Show studio selection modal first
+      setPendingNaming({
+        type: 'studio-selection',
+        songIds,
+        recordAction: actionId,
+      });
+      return;
+    }
+
+    // Handle STUDIO_WORK - continue recording session
+    if (actionId === 'STUDIO_WORK') {
+      if (!gameState.recordingSession) return;
+
+      const session = gameState.recordingSession;
+      const studioOption = STUDIO_OPTIONS.find(s => s.id === session.studioQuality) || STUDIO_OPTIONS[0];
+      const newWeeksRemaining = session.weeksRemaining - 1;
+      const newProductionProgress = Math.min(100, session.productionProgress + (100 / session.weeksTotal));
+
+      // Check if recording is complete
+      if (newWeeksRemaining <= 0) {
+        // Recording complete - create the album
+        const rng = createRandom(gameState.seed + gameState.week);
+        const newAlbum = {
+          id: `album_${gameState.week}_${rng.nextInt(0, 9999)}`,
+          title: session.title,
+          songIds: session.songIds,
+          productionValue: Math.floor(newProductionProgress) + Math.floor(gameState.player.skill / 4) + studioOption.qualityBonus,
+          promotionSpend: 0,
+          reception: null,
+          salesTier: null,
+          labelId: gameState.labelDeals.find(d => d.status === 'active')?.id || null,
+          weekReleased: gameState.week,
+        };
+
+        const newState: GameState = {
+          ...gameState,
+          albums: [...gameState.albums, newAlbum],
+          recordingSession: null,
+          player: {
+            ...gameState.player,
+            burnout: Math.min(100, gameState.player.burnout + 2),
+            skill: Math.min(100, gameState.player.skill + 1),
+            money: gameState.player.money - session.costPerWeek,
+            flags: { ...gameState.player.flags, inStudio: false },
+          },
+          week: gameState.week + 1,
+          year: Math.floor(gameState.week / 52) + 1,
+        };
+
+        const label = session.type === 'ep' ? 'EP' : 'album';
+        setGameState(newState);
+        setLastTurnResult({
+          newState,
+          actionResult: `You finished recording "${session.title}" - a ${label} with ${session.songIds.length} tracks. Time to let the world hear it.`,
+          triggeredEvents: [],
+          isGameOver: false,
+          gameOverReason: null,
+        });
         return;
       }
 
-      // Generate album title for suggestion
-      const rng = createRandom(gameState.seed + gameState.week + 1000);
-      const generatedTitle = generateAlbumTitle(rng);
+      // Recording continues
+      const newState: GameState = {
+        ...gameState,
+        recordingSession: {
+          ...session,
+          weeksRemaining: newWeeksRemaining,
+          productionProgress: newProductionProgress,
+        },
+        player: {
+          ...gameState.player,
+          burnout: Math.min(100, gameState.player.burnout + 2),
+          skill: Math.min(100, gameState.player.skill + 1),
+          money: gameState.player.money - session.costPerWeek,
+        },
+        week: gameState.week + 1,
+        year: Math.floor(gameState.week / 52) + 1,
+      };
 
-      // Get song IDs for the album (use all unreleased songs)
-      const albumedSongIds = new Set(gameState.albums.flatMap(a => a.songIds));
-      const unreleasedSongIds = gameState.songs
-        .filter(s => !albumedSongIds.has(s.id))
-        .map(s => s.id);
-
-      if (unreleasedSongIds.length === 0) {
-        return; // No unreleased songs
-      }
-
-      setPendingNaming({
-        type: 'album',
-        songIds: unreleasedSongIds,
-        generatedTitle,
+      setGameState(newState);
+      setLastTurnResult({
+        newState,
+        actionResult: `Another week in the studio working on "${session.title}". ${newWeeksRemaining} week${newWeeksRemaining > 1 ? 's' : ''} to go. Production at ${Math.floor(newProductionProgress)}%.`,
+        triggeredEvents: [],
+        isGameOver: false,
+        gameOverReason: null,
       });
       return;
     }
@@ -164,9 +266,37 @@ export function useGame(): UseGameReturn {
     setPendingEventState(null);
   }, [pendingEventState, lastTurnResult, pendingEvent, eventOutcome]);
 
+  // Studio selection handler
+  const selectStudio = useCallback((studioQuality: StudioQuality) => {
+    if (!pendingNaming || pendingNaming.type !== 'studio-selection' || !gameState) return;
+
+    const rng = createRandom(gameState.seed + gameState.week + 1000);
+    const generatedTitle = generateAlbumTitle(rng);
+
+    if (pendingNaming.recordAction === 'RECORD_SINGLE') {
+      setPendingNaming({
+        type: 'single',
+        songIds: pendingNaming.songIds,
+        generatedTitle,
+        recordAction: 'RECORD_SINGLE',
+        studioQuality,
+      });
+    } else {
+      setPendingNaming({
+        type: 'album',
+        songIds: pendingNaming.songIds,
+        generatedTitle,
+        recordAction: pendingNaming.recordAction,
+        studioQuality,
+      });
+    }
+  }, [pendingNaming, gameState]);
+
   // Naming flow handlers
   const confirmNaming = useCallback((customName: string | null) => {
     if (!pendingNaming || !gameState) return;
+    // Studio selection is handled separately
+    if (pendingNaming.type === 'studio-selection') return;
 
     const finalName = customName || pendingNaming.generatedTitle;
 
@@ -204,18 +334,16 @@ export function useGame(): UseGameReturn {
         setGameState(updatedState);
         setLastTurnResult(updatedResult);
       }
-    } else if (pendingNaming.type === 'album') {
-      // Create the album with the custom name
-      // For now, we'll just process the RECORD action with the album name
-      // TODO: Implement full album recording with the name
+    } else if (pendingNaming.type === 'single') {
+      // Singles are recorded immediately (1 week)
       const rng = createRandom(gameState.seed + gameState.week);
+      const studioOption = STUDIO_OPTIONS.find(s => s.id === pendingNaming.studioQuality) || STUDIO_OPTIONS[0];
 
-      // Simple album creation - in a full implementation this would use createAlbum
       const newAlbum = {
         id: `album_${gameState.week}_${rng.nextInt(0, 9999)}`,
         title: finalName,
         songIds: pendingNaming.songIds,
-        productionValue: 50 + Math.floor(gameState.player.skill / 2),
+        productionValue: 50 + Math.floor(gameState.player.skill / 2) + studioOption.qualityBonus,
         promotionSpend: 0,
         reception: null,
         salesTier: null,
@@ -223,22 +351,60 @@ export function useGame(): UseGameReturn {
         weekReleased: gameState.week,
       };
 
-      const newState = {
+      const studioCost = studioOption.costPerWeek;
+      const newState: GameState = {
         ...gameState,
         albums: [...gameState.albums, newAlbum],
         player: {
           ...gameState.player,
-          burnout: Math.min(100, gameState.player.burnout + 3),
+          burnout: Math.min(100, gameState.player.burnout + 1),
           skill: Math.min(100, gameState.player.skill + 1),
+          money: gameState.player.money - studioCost,
         },
         week: gameState.week + 1,
         year: Math.floor(gameState.week / 52) + 1,
       };
 
+      const studioLabel = studioOption.id === 'bedroom' ? 'in your bedroom' : `at ${studioOption.label}`;
       setGameState(newState);
       setLastTurnResult({
         newState,
-        actionResult: `You recorded "${finalName}" - an album with ${pendingNaming.songIds.length} tracks.`,
+        actionResult: `You recorded "${finalName}" ${studioLabel}. One track, done in a week.`,
+        triggeredEvents: [],
+        isGameOver: false,
+        gameOverReason: null,
+      });
+    } else if (pendingNaming.type === 'album') {
+      // EPs and Albums start multi-week recording sessions
+      const studioOption = STUDIO_OPTIONS.find(s => s.id === pendingNaming.studioQuality) || STUDIO_OPTIONS[0];
+      const weeksTotal = pendingNaming.recordAction === 'RECORD_EP' ? 2 : 4;
+      const typeLabel = pendingNaming.recordAction === 'RECORD_EP' ? 'EP' : 'album';
+
+      const session: RecordingSession = {
+        type: pendingNaming.recordAction === 'RECORD_EP' ? 'ep' : 'album',
+        title: finalName,
+        songIds: pendingNaming.songIds,
+        weeksRemaining: weeksTotal,
+        weeksTotal,
+        productionProgress: 0,
+        studioQuality: studioOption.id,
+        costPerWeek: studioOption.costPerWeek,
+      };
+
+      const newState: GameState = {
+        ...gameState,
+        recordingSession: session,
+        player: {
+          ...gameState.player,
+          flags: { ...gameState.player.flags, inStudio: true },
+        },
+      };
+
+      const studioLabel = studioOption.id === 'bedroom' ? 'your bedroom setup' : studioOption.label;
+      setGameState(newState);
+      setLastTurnResult({
+        newState,
+        actionResult: `You've booked ${weeksTotal} weeks to record "${finalName}" at ${studioLabel}. Time to make some noise.`,
         triggeredEvents: [],
         isGameOver: false,
         gameOverReason: null,
@@ -327,6 +493,7 @@ export function useGame(): UseGameReturn {
     restartGame,
     newGame,
     handleFireBandmate,
+    selectStudio,
     confirmNaming,
     cancelNaming,
     availableActions,

@@ -13,6 +13,11 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
   const [customName, setCustomName] = useState('');
   const [useCustom, setUseCustom] = useState(false);
 
+  // Don't render for studio selection - that's handled separately
+  if (pending.type === 'studio-selection') {
+    return null;
+  }
+
   const isSong = pending.type === 'song';
   const typeLabel = isSong ? 'Song' : 'Album';
   const icon = isSong ? '🎵' : '💿';

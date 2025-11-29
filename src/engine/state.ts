@@ -393,6 +393,9 @@ export function createGameState(options: CreateGameOptions): GameState {
     rivalBands,
     newsItems: [],
 
+    // Recording session
+    recordingSession: null,
+
     week: 1,
     year: 1,
 
