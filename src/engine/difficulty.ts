@@ -15,23 +15,23 @@ export const DIFFICULTY_SETTINGS: Record<Difficulty, DifficultySettings> = {
   easy: {
     name: 'Garage Band',
     description: 'A forgiving journey. Good for learning the ropes.',
-    // Economics - more forgiving
-    livingCostMultiplier: 0.7,
-    gigPayMultiplier: 1.3,
-    advanceMultiplier: 1.2,
-    // Stats - slower penalties, faster gains
-    fanGainMultiplier: 1.3,
-    hypeDecayMultiplier: 0.7,
-    healthLossMultiplier: 0.7,
-    addictionGainMultiplier: 0.6,
-    burnoutGainMultiplier: 0.7,
-    // Starting stats - better position
-    startingMoney: 600,
-    startingHealth: 80,
-    startingStability: 65,
-    // Events - fewer bad surprises
-    eventChanceMultiplier: 0.8,
-    negativeEventWeight: 0.7,
+    // Economics - slightly forgiving but still requires hustle
+    livingCostMultiplier: 0.9,
+    gigPayMultiplier: 1.15,
+    advanceMultiplier: 1.1,
+    // Stats - slower penalties, slightly faster gains
+    fanGainMultiplier: 1.2,
+    hypeDecayMultiplier: 0.85,
+    healthLossMultiplier: 0.8,
+    addictionGainMultiplier: 0.7,
+    burnoutGainMultiplier: 0.8,
+    // Starting stats - modest advantage
+    startingMoney: 500,
+    startingHealth: 75,
+    startingStability: 60,
+    // Events - slightly fewer bad surprises
+    eventChanceMultiplier: 0.9,
+    negativeEventWeight: 0.8,
   },
 
   normal: {

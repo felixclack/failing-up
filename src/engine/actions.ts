@@ -159,9 +159,9 @@ export const ACTIONS: Record<ActionId, Action> = {
       onTour: false,
     },
     baseEffects: {
-      money: 150,
-      burnout: 3,
-      hype: -2,
+      money: 120,
+      burnout: 4,
+      hype: -3,
     },
     hasSpecialLogic: false,
   },

@@ -50,8 +50,8 @@ describe('difficulty', () => {
       expect(DIFFICULTY_SETTINGS.normal.healthLossMultiplier).toBeLessThan(DIFFICULTY_SETTINGS.hard.healthLossMultiplier);
       expect(DIFFICULTY_SETTINGS.hard.healthLossMultiplier).toBeLessThan(DIFFICULTY_SETTINGS.brutal.healthLossMultiplier);
 
-      // Starting money should decrease
-      expect(DIFFICULTY_SETTINGS.easy.startingMoney).toBeGreaterThan(DIFFICULTY_SETTINGS.normal.startingMoney);
+      // Starting money should decrease (easy is same as normal now, but others decrease)
+      expect(DIFFICULTY_SETTINGS.easy.startingMoney).toBeGreaterThanOrEqual(DIFFICULTY_SETTINGS.normal.startingMoney);
       expect(DIFFICULTY_SETTINGS.normal.startingMoney).toBeGreaterThan(DIFFICULTY_SETTINGS.hard.startingMoney);
       expect(DIFFICULTY_SETTINGS.hard.startingMoney).toBeGreaterThan(DIFFICULTY_SETTINGS.brutal.startingMoney);
     });
@@ -85,7 +85,7 @@ describe('difficulty', () => {
 
     describe('getWeeklyLivingCost', () => {
       it('applies multiplier correctly', () => {
-        expect(getWeeklyLivingCost(100, easySettings)).toBe(70); // 0.7 multiplier
+        expect(getWeeklyLivingCost(100, easySettings)).toBe(90); // 0.9 multiplier
         expect(getWeeklyLivingCost(100, normalSettings)).toBe(100); // 1.0 multiplier
         expect(getWeeklyLivingCost(100, brutalSettings)).toBe(150); // 1.5 multiplier
       });
@@ -93,7 +93,7 @@ describe('difficulty', () => {
 
     describe('getGigPayout', () => {
       it('applies multiplier correctly', () => {
-        expect(getGigPayout(100, easySettings)).toBe(130); // 1.3 multiplier
+        expect(getGigPayout(100, easySettings)).toBe(115); // 1.15 multiplier
         expect(getGigPayout(100, normalSettings)).toBe(100); // 1.0 multiplier
         expect(getGigPayout(100, brutalSettings)).toBe(60); // 0.6 multiplier
       });
@@ -101,7 +101,7 @@ describe('difficulty', () => {
 
     describe('getFanGain', () => {
       it('applies multiplier correctly', () => {
-        expect(getFanGain(100, easySettings)).toBe(130); // 1.3 multiplier
+        expect(getFanGain(100, easySettings)).toBe(120); // 1.2 multiplier
         expect(getFanGain(100, normalSettings)).toBe(100); // 1.0 multiplier
         expect(getFanGain(100, brutalSettings)).toBe(60); // 0.6 multiplier
       });
@@ -109,7 +109,7 @@ describe('difficulty', () => {
 
     describe('getHypeDecay', () => {
       it('applies multiplier correctly', () => {
-        expect(getHypeDecay(10, easySettings)).toBe(7); // 0.7 multiplier
+        expect(getHypeDecay(10, easySettings)).toBe(9); // 0.85 multiplier rounds to 9
         expect(getHypeDecay(10, normalSettings)).toBe(10); // 1.0 multiplier
         expect(getHypeDecay(10, brutalSettings)).toBe(15); // 1.5 multiplier
       });
@@ -117,7 +117,7 @@ describe('difficulty', () => {
 
     describe('getHealthLoss', () => {
       it('applies multiplier correctly', () => {
-        expect(getHealthLoss(10, easySettings)).toBe(7); // 0.7 multiplier
+        expect(getHealthLoss(10, easySettings)).toBe(8); // 0.8 multiplier
         expect(getHealthLoss(10, normalSettings)).toBe(10); // 1.0 multiplier
         expect(getHealthLoss(10, brutalSettings)).toBe(16); // 1.6 multiplier
       });
@@ -125,7 +125,7 @@ describe('difficulty', () => {
 
     describe('getAddictionGain', () => {
       it('applies multiplier correctly', () => {
-        expect(getAddictionGain(10, easySettings)).toBe(6); // 0.6 multiplier
+        expect(getAddictionGain(10, easySettings)).toBe(7); // 0.7 multiplier
         expect(getAddictionGain(10, normalSettings)).toBe(10); // 1.0 multiplier
         expect(getAddictionGain(10, brutalSettings)).toBe(18); // 1.8 multiplier
       });
@@ -133,7 +133,7 @@ describe('difficulty', () => {
 
     describe('getBurnoutGain', () => {
       it('applies multiplier correctly', () => {
-        expect(getBurnoutGain(10, easySettings)).toBe(7); // 0.7 multiplier
+        expect(getBurnoutGain(10, easySettings)).toBe(8); // 0.8 multiplier
         expect(getBurnoutGain(10, normalSettings)).toBe(10); // 1.0 multiplier
         expect(getBurnoutGain(10, brutalSettings)).toBe(15); // 1.5 multiplier
       });
@@ -141,7 +141,7 @@ describe('difficulty', () => {
 
     describe('getEventChance', () => {
       it('applies multiplier correctly', () => {
-        expect(getEventChance(0.5, easySettings)).toBe(0.4); // 0.8 multiplier
+        expect(getEventChance(0.5, easySettings)).toBe(0.45); // 0.9 multiplier
         expect(getEventChance(0.5, normalSettings)).toBe(0.5); // 1.0 multiplier
         expect(getEventChance(0.5, brutalSettings)).toBe(0.7); // 1.4 multiplier
       });

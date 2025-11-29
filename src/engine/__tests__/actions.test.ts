@@ -188,13 +188,15 @@ describe('actions', () => {
     });
 
     describe('SIDE_JOB', () => {
-      it('provides steady income', () => {
+      it('provides modest income with tradeoffs', () => {
         const state = createGameState({ playerName: 'Test', seed: 1 });
         const rng = createRandom(1);
         const result = executeAction('SIDE_JOB', state, rng);
 
         expect(result.success).toBe(true);
-        expect(result.statChanges.money).toBe(150);
+        expect(result.statChanges.money).toBe(120);
+        expect(result.statChanges.burnout).toBe(4);
+        expect(result.statChanges.hype).toBe(-3);
       });
     });
   });
