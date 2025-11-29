@@ -16,6 +16,7 @@ import {
   GigOutcome,
   Venue,
   VenueType,
+  SupportSlotOffer,
 } from './types';
 import { RandomGenerator } from './random';
 import { getTotalFans } from './state';
@@ -515,4 +516,178 @@ export function getManagerQualityDescription(manager: Manager): string {
  */
 export function formatManagerCut(cut: number): string {
   return `${Math.round(cut * 100)}%`;
+}
+
+// =============================================================================
+// Support Slot Offers
+// =============================================================================
+
+// Big band names for support slot offers
+const BIG_BAND_PREFIXES = [
+  'The', 'Black', 'Electric', 'Iron', 'Steel', 'Dead', 'Royal', 'King',
+  'Atomic', 'Velvet', 'Silver', 'Golden', 'Dark', 'Crimson', 'Stone',
+];
+
+const BIG_BAND_SUFFIXES = [
+  'Wolves', 'Serpents', 'Thunder', 'Void', 'Machine', 'Phoenix', 'Horde',
+  'Cult', 'Empire', 'Covenant', 'Dominion', 'Legion', 'Fury', 'Storm',
+  'Sabbath', 'Revival', 'Circus', 'Pistols', 'Monkeys', 'Underground',
+];
+
+function generateBigBandName(rng: RandomGenerator): string {
+  const prefix = BIG_BAND_PREFIXES[rng.nextInt(0, BIG_BAND_PREFIXES.length - 1)];
+  const suffix = BIG_BAND_SUFFIXES[rng.nextInt(0, BIG_BAND_SUFFIXES.length - 1)];
+  return `${prefix} ${suffix}`;
+}
+
+// Big venue names for support slots
+const BIG_VENUE_NAMES = [
+  'O2 Academy', 'Roundhouse', 'Brixton Academy', 'Manchester Academy',
+  'Glasgow Barrowland', 'Leeds O2', 'Birmingham O2', 'Bristol O2',
+  'Electric Ballroom', 'Shepherd\'s Bush Empire', 'Rock City', 'Wembley Arena',
+  'Alexandra Palace', 'Cardiff Motorpoint', 'Edinburgh Usher Hall',
+];
+
+const BIG_VENUE_CITIES = [
+  'London', 'Manchester', 'Birmingham', 'Leeds', 'Glasgow',
+  'Bristol', 'Liverpool', 'Sheffield', 'Newcastle', 'Cardiff',
+];
+
+/**
+ * Check if a support slot offer should be generated this week
+ * Support slots are offered based on:
+ * - Band has enough fans (2000+)
+ * - Band has decent hype (30+)
+ * - Band has a manager with good connections
+ * - Random chance each week
+ */
+export function tryGenerateSupportSlotOffer(
+  state: GameState,
+  rng: RandomGenerator
+): SupportSlotOffer | null {
+  const { player, manager } = state;
+  const totalFans = getTotalFans(player);
+
+  // Requirements to be considered for support slots
+  if (totalFans < 2000) return null;
+  if (player.hype < 25) return null;
+
+  // Already have a pending offer
+  if (state.pendingSupportSlotOffer) return null;
+
+  // Already have a gig booked
+  if (state.upcomingGig) return null;
+
+  // Manager connections affect chance (no manager = much lower chance)
+  const hasManager = manager && manager.status === 'active';
+  const connectionsBonus = hasManager ? manager.connections / 100 : 0.1;
+
+  // Industry goodwill affects chance
+  const goodwillBonus = player.industryGoodwill / 200;
+
+  // Hype affects chance
+  const hypeBonus = player.hype / 200;
+
+  // Base chance is low (5%), bonuses can bring it to ~20%
+  const baseChance = 0.05;
+  const totalChance = baseChance + (connectionsBonus * 0.08) + goodwillBonus + hypeBonus;
+
+  if (rng.next() > totalChance) return null;
+
+  // Generate the support slot offer
+  const headlinerFans = totalFans * rng.nextInt(5, 15); // Headliner is 5-15x your size
+  const venueName = BIG_VENUE_NAMES[rng.nextInt(0, BIG_VENUE_NAMES.length - 1)];
+  const venueCity = BIG_VENUE_CITIES[rng.nextInt(0, BIG_VENUE_CITIES.length - 1)];
+
+  // Venue capacity based on headliner size
+  const capacity = Math.min(10000, Math.floor(headlinerFans * 0.1) + rng.nextInt(500, 2000));
+
+  const venue: Venue = {
+    id: `venue_support_${state.week}_${rng.nextInt(0, 9999)}`,
+    name: venueName,
+    type: 'support_slot',
+    city: venueCity,
+    capacity,
+    basePay: 200 + rng.nextInt(0, 300), // Support slots pay less
+    prestige: 70 + rng.nextInt(0, 30),
+  };
+
+  // Exposure multiplier based on headliner size
+  const exposure = 1.5 + (Math.log10(headlinerFans) / 10);
+
+  // Gig is 1-2 weeks out
+  const gigWeek = state.week + rng.nextInt(1, 2);
+
+  return {
+    id: `support_offer_${state.week}_${rng.nextInt(0, 9999)}`,
+    headlinerName: generateBigBandName(rng),
+    headlinerFans,
+    venue,
+    week: gigWeek,
+    exposure: Math.round(exposure * 10) / 10,
+    pay: venue.basePay,
+    prestigeBonus: rng.nextInt(5, 15),
+    expiresWeek: state.week + 1, // Must decide by next week
+  };
+}
+
+/**
+ * Accept a support slot offer - converts it to an upcoming gig
+ */
+export function acceptSupportSlotOffer(
+  state: GameState,
+  offer: SupportSlotOffer
+): GameState {
+  const gig: Gig = {
+    id: `gig_support_${offer.id}`,
+    venue: offer.venue,
+    week: offer.week,
+    isSupport: true,
+    headlinerName: offer.headlinerName,
+    expectedTurnout: Math.floor(offer.venue.capacity * 0.7),
+    guaranteedPay: offer.pay,
+    accepted: true,
+  };
+
+  return {
+    ...state,
+    upcomingGig: gig,
+    pendingSupportSlotOffer: null,
+  };
+}
+
+/**
+ * Decline a support slot offer
+ */
+export function declineSupportSlotOffer(state: GameState): GameState {
+  return {
+    ...state,
+    pendingSupportSlotOffer: null,
+    // Small reputation hit for turning down a big opportunity
+    player: {
+      ...state.player,
+      industryGoodwill: Math.max(0, state.player.industryGoodwill - 2),
+    },
+  };
+}
+
+/**
+ * Clear expired support slot offers
+ */
+export function clearExpiredOffers(state: GameState): GameState {
+  if (!state.pendingSupportSlotOffer) return state;
+
+  if (state.week > state.pendingSupportSlotOffer.expiresWeek) {
+    return {
+      ...state,
+      pendingSupportSlotOffer: null,
+      // Missed opportunity hurts reputation slightly
+      player: {
+        ...state.player,
+        industryGoodwill: Math.max(0, state.player.industryGoodwill - 3),
+      },
+    };
+  }
+
+  return state;
 }

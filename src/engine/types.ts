@@ -208,6 +208,19 @@ export interface GigResult {
   description: string;     // Detailed narrative
 }
 
+// Support slot offer - when a bigger band invites you to open for them
+export interface SupportSlotOffer {
+  id: string;
+  headlinerName: string;
+  headlinerFans: number;     // How big the headliner is
+  venue: Venue;
+  week: number;              // When the gig would happen
+  exposure: number;          // Fan multiplier for this gig (1.5-3x)
+  pay: number;               // Usually lower than headline (exposure is the reward)
+  prestigeBonus: number;     // Cred boost if you do well
+  expiresWeek: number;       // Player has limited time to decide
+}
+
 export interface Song {
   id: string;
   title: string;
@@ -560,6 +573,9 @@ export interface GameState {
   // Gig system - manager books gigs, results shown after
   upcomingGig: Gig | null;       // Next gig the manager has booked
   lastGigResult: GigResult | null; // Result of most recent gig
+
+  // Support slot offers from bigger bands
+  pendingSupportSlotOffer: SupportSlotOffer | null;
 
   // Rival bands and industry news
   rivalBands: RivalBand[];

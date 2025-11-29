@@ -393,6 +393,7 @@ export function createGameState(options: CreateGameOptions): GameState {
     manager: null,
     upcomingGig: null,
     lastGigResult: null,
+    pendingSupportSlotOffer: null,
 
     // Rival bands and industry news
     rivalBands,

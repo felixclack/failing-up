@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption, Temptation, TemptationChoice, Manager, GigResult, Gig, TourType, TourSession } from '@/engine/types';
+import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption, Temptation, TemptationChoice, Manager, GigResult, Gig, TourType, TourSession, SupportSlotOffer } from '@/engine/types';
 import { createGameState, CreateGameOptions } from '@/engine/state';
 import { processTurnWithEvents } from '@/engine/turn';
 import { getAvailableActions, generateSongTitle } from '@/engine/actions';
@@ -12,7 +12,7 @@ import { createRandom } from '@/engine/random';
 import { applyStatDeltas, getTotalFans, weekToYear } from '@/engine/state';
 import { ALL_EVENTS } from '@/data/events';
 import { ALL_TEMPTATIONS, canTemptationTrigger } from '@/data/temptations';
-import { generateManagerCandidates, hireManager, fireManager } from '@/engine/manager';
+import { generateManagerCandidates, hireManager, fireManager, tryGenerateSupportSlotOffer, acceptSupportSlotOffer, declineSupportSlotOffer, clearExpiredOffers } from '@/engine/manager';
 
 // Studio options with cost and quality tradeoffs
 export const STUDIO_OPTIONS: StudioOption[] = [
@@ -105,6 +105,11 @@ export interface UseGameReturn {
   selectTour: (tourType: TourType) => void;
   cancelTourSelection: () => void;
 
+  // Support slot offers
+  pendingSupportSlotOffer: SupportSlotOffer | null;
+  acceptSupportSlot: () => void;
+  declineSupportSlot: () => void;
+
   // Computed
   availableActions: ActionId[];
   currentWeekLog: string | null;
@@ -164,6 +169,37 @@ export function useGame(): UseGameReturn {
       setPendingGigDecision(gameState.upcomingGig);
     }
   }, [gameState, pendingGigDecision, pendingEvent, pendingNaming, pendingTemptation, pendingGigResult]);
+
+  // Track last week to detect week changes for support slot offer generation
+  const [lastCheckedWeek, setLastCheckedWeek] = useState<number>(0);
+
+  // Check for support slot offers when week changes
+  useEffect(() => {
+    if (!gameState) return;
+    if (gameState.week === lastCheckedWeek) return;
+
+    // Clear expired offers first
+    let newState = clearExpiredOffers(gameState);
+
+    // Try to generate a support slot offer (only if we don't have one)
+    if (!newState.pendingSupportSlotOffer) {
+      const rng = createRandom(gameState.seed + gameState.week + 8000);
+      const offer = tryGenerateSupportSlotOffer(newState, rng);
+      if (offer) {
+        newState = {
+          ...newState,
+          pendingSupportSlotOffer: offer,
+        };
+      }
+    }
+
+    // Update state if changed
+    if (newState !== gameState) {
+      setGameState(newState);
+    }
+
+    setLastCheckedWeek(gameState.week);
+  }, [gameState, lastCheckedWeek]);
 
   const startGame = useCallback((options: CreateGameOptions) => {
     const newState = createGameState(options);
@@ -700,6 +736,21 @@ export function useGame(): UseGameReturn {
     setShowTourSelection(false);
   }, []);
 
+  // Support slot offer handlers
+  const acceptSupportSlot = useCallback(() => {
+    if (!gameState || !gameState.pendingSupportSlotOffer) return;
+
+    const newState = acceptSupportSlotOffer(gameState, gameState.pendingSupportSlotOffer);
+    setGameState(newState);
+  }, [gameState]);
+
+  const declineSupportSlot = useCallback(() => {
+    if (!gameState || !gameState.pendingSupportSlotOffer) return;
+
+    const newState = declineSupportSlotOffer(gameState);
+    setGameState(newState);
+  }, [gameState]);
+
   // Studio selection handler
   const selectStudio = useCallback((studioQuality: StudioQuality) => {
     if (!pendingNaming || pendingNaming.type !== 'studio-selection' || !gameState) return;
@@ -964,6 +1015,9 @@ export function useGame(): UseGameReturn {
     showTourSelection,
     selectTour,
     cancelTourSelection,
+    pendingSupportSlotOffer: gameState?.pendingSupportSlotOffer || null,
+    acceptSupportSlot,
+    declineSupportSlot,
     availableActions,
     currentWeekLog,
   };

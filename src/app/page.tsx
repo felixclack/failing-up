@@ -12,6 +12,7 @@ import { GigOutcomeModal } from '@/components/game/GigOutcomeModal';
 import { GigNotificationModal } from '@/components/game/GigNotificationModal';
 import { ManagerHireModal } from '@/components/game/ManagerPanel';
 import { TourSelectionModal } from '@/components/game/TourSelectionModal';
+import { SupportSlotModal } from '@/components/game/SupportSlotModal';
 import { getTotalFans } from '@/engine/state';
 
 export default function Home() {
@@ -53,6 +54,9 @@ export default function Home() {
     showTourSelection,
     selectTour,
     cancelTourSelection,
+    pendingSupportSlotOffer,
+    acceptSupportSlot,
+    declineSupportSlot,
   } = useGame();
 
   // Not started - show start screen
@@ -128,6 +132,16 @@ export default function Home() {
           hasLabelDeal={gameState.player.flags.hasLabelDeal}
           onSelectTour={selectTour}
           onCancel={cancelTourSelection}
+        />
+      )}
+
+      {/* Support Slot Offer Modal - show when a bigger band offers a support slot */}
+      {pendingSupportSlotOffer && (
+        <SupportSlotModal
+          offer={pendingSupportSlotOffer}
+          currentWeek={gameState.week}
+          onAccept={acceptSupportSlot}
+          onDecline={declineSupportSlot}
         />
       )}
 
