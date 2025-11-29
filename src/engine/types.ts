@@ -52,6 +52,16 @@ export type Difficulty = 'easy' | 'normal' | 'hard' | 'brutal';
 // Talent level presets for character creation
 export type TalentLevel = 'struggling' | 'average' | 'gifted' | 'prodigy';
 
+// Rival band status
+export type RivalBandStatus = 'active' | 'hiatus' | 'broken_up' | 'retired';
+
+// Fame tiers for rival band matching
+export type FameTier = 'local' | 'regional' | 'national' | 'star' | 'legend';
+
+// News item types
+export type NewsType = 'release' | 'tour' | 'scandal' | 'breakup' | 'signing' |
+                       'rivalry' | 'industry' | 'death' | 'comeback' | 'theft';
+
 // =============================================================================
 // Difficulty Settings
 // =============================================================================
@@ -186,6 +196,39 @@ export interface LabelDeal {
   touringCut: number;       // 0-1, fraction of touring (if includesTouring)
 }
 
+export interface RivalBand {
+  id: string;
+  name: string;
+  style: MusicStyle;
+  fameTier: FameTier;
+  reputation: number;        // 0-100, like cred
+  hype: number;              // 0-100, current buzz
+  weekFormed: number;        // When they appeared in the game
+  status: RivalBandStatus;
+  hits: number;              // Number of successful releases
+  scandals: number;          // Controversy count
+  relationship: number;      // -100 to 100, how they feel about player
+  // Dynamic traits
+  isRival: boolean;          // Currently a rival to player
+  hasBeef: boolean;          // Active feud
+  stolenFromPlayer: boolean; // Has taken something from player
+}
+
+export interface NewsItem {
+  id: string;
+  week: number;
+  headline: string;
+  details: string;
+  type: NewsType;
+  bandId?: string;           // If about a specific rival band
+  involvesPlayer: boolean;   // If player is mentioned
+  impact?: {                 // Optional player stat effects from news
+    hype?: number;
+    cred?: number;
+    industryGoodwill?: number;
+  };
+}
+
 // =============================================================================
 // Actions
 // =============================================================================
@@ -220,6 +263,10 @@ export interface ActionRequirements {
   minMoney?: number;
   minHealth?: number;
   maxBurnout?: number;
+  // Song-related requirements
+  hasUnreleasedSongs?: boolean;  // Has songs that haven't been released
+  hasReleasedMusic?: boolean;    // Has at least one released song or album
+  minSongs?: number;             // Minimum total songs written
 }
 
 export interface Action {
@@ -349,6 +396,10 @@ export interface GameState {
   songs: Song[];
   albums: Album[];
   labelDeals: LabelDeal[];
+
+  // Rival bands and industry news
+  rivalBands: RivalBand[];
+  newsItems: NewsItem[];
 
   // Time tracking
   week: number;        // Current week (1-520)

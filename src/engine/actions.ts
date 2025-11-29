@@ -81,9 +81,10 @@ export const ACTIONS: Record<ActionId, Action> = {
   TOUR: {
     id: 'TOUR',
     label: 'Tour',
-    description: 'Go on the road. Big exposure but exhausting.',
+    description: 'Go on the road. Big exposure but exhausting. Need released music first.',
     requirements: {
-      hasLabelDeal: true, // For now, requires label deal
+      hasLabelDeal: true,
+      hasReleasedMusic: true, // Can't tour without something to promote
       minHealth: 40,
     },
     baseEffects: {
@@ -98,10 +99,11 @@ export const ACTIONS: Record<ActionId, Action> = {
   RECORD: {
     id: 'RECORD',
     label: 'Record',
-    description: 'Hit the studio to record an album.',
+    description: 'Hit the studio to record an album. Need songs to record first.',
     requirements: {
       onTour: false,
       inStudio: false,
+      hasUnreleasedSongs: true, // Need material to record
     },
     baseEffects: {
       skill: 1,
@@ -173,16 +175,17 @@ export const ACTIONS: Record<ActionId, Action> = {
   RELEASE_SINGLE: {
     id: 'RELEASE_SINGLE',
     label: 'Release Single',
-    description: 'Drop a single to streaming platforms. Builds momentum and streaming income.',
+    description: 'Drop a single to streaming platforms. Need to write something first.',
     requirements: {
       onTour: false,
+      hasUnreleasedSongs: true, // Need a song to release
     },
     baseEffects: {
       hype: 3,
       algoBoost: 2,
       burnout: 1,
     },
-    hasSpecialLogic: true, // Requires unreleased song, updates song streaming stats
+    hasSpecialLogic: true,
   },
 };
 
@@ -198,7 +201,7 @@ export function isActionAvailable(actionId: ActionId, state: GameState): boolean
   if (!action) return false;
 
   const { requirements } = action;
-  const { player } = state;
+  const { player, songs } = state;
 
   // Check flag requirements
   if (requirements.onTour !== undefined && player.flags.onTour !== requirements.onTour) {
@@ -219,6 +222,27 @@ export function isActionAvailable(actionId: ActionId, state: GameState): boolean
     return false;
   }
   if (requirements.maxBurnout !== undefined && player.burnout > requirements.maxBurnout) {
+    return false;
+  }
+
+  // Check song-related requirements
+  if (requirements.hasUnreleasedSongs) {
+    const unreleasedSongs = songs.filter(s => !s.isReleased);
+    if (unreleasedSongs.length === 0) {
+      return false;
+    }
+  }
+
+  if (requirements.hasReleasedMusic) {
+    const releasedSongs = songs.filter(s => s.isReleased);
+    // Also check albums if we have them
+    const releasedAlbums = state.albums?.filter(a => a.weekReleased !== null) ?? [];
+    if (releasedSongs.length === 0 && releasedAlbums.length === 0) {
+      return false;
+    }
+  }
+
+  if (requirements.minSongs !== undefined && songs.length < requirements.minSongs) {
     return false;
   }
 

@@ -51,6 +51,15 @@ import {
   getWeekReflection,
   NarrativeContext,
 } from './narrative';
+import {
+  updateRivalBands,
+  ensureRivalsAtTier,
+  getPlayerFameTier,
+} from './rivals';
+import {
+  generateWeeklyNews,
+  applyNewsImpacts,
+} from './news';
 
 // =============================================================================
 // Constants
@@ -523,6 +532,35 @@ export function processTurnWithEvents(
 
   // 6. Check and advance arcs based on conditions
   newState = checkAndAdvanceArcs(newState);
+
+  // 6.5 Update rival bands and generate news
+  const rivalsRng = createRandom(state.seed + state.week + 3000);
+  const prevTier = getPlayerFameTier(state.player);
+
+  // Update rival band states
+  const updatedRivals = updateRivalBands(newState, rivalsRng);
+  newState = { ...newState, rivalBands: updatedRivals };
+
+  // Check if player moved to new tier, add rivals if needed
+  const newTier = getPlayerFameTier(newState.player);
+  if (newTier !== prevTier) {
+    const newRivalsForTier = ensureRivalsAtTier(newState, newTier, rivalsRng);
+    newState = {
+      ...newState,
+      rivalBands: [...newState.rivalBands, ...newRivalsForTier],
+    };
+  }
+
+  // Generate weekly news (30% chance each week to not overwhelm)
+  if (rivalsRng.next() < 0.3) {
+    const weeklyNews = generateWeeklyNews(newState, rivalsRng);
+    newState = {
+      ...newState,
+      newsItems: [...newState.newsItems, ...weeklyNews],
+    };
+    // Apply any news impacts to player stats
+    newState = applyNewsImpacts(newState, weeklyNews);
+  }
 
   // 7. Apply end-of-week stat updates
   newState = applyEndOfWeekUpdates(newState);

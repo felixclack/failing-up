@@ -1,14 +1,11 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { GameState, ActionId } from '@/engine/types';
-import { StatsDisplay } from './StatsDisplay';
-import { ActionPanel } from './ActionPanel';
-import { WeeklyLog } from './WeeklyLog';
-import { BandDisplay } from './BandDisplay';
-import { MobileHeader } from './MobileHeader';
-import { MobileStats } from './MobileStats';
-import { MobileActionPanel } from './MobileActionPanel';
 import { CollapsibleSection } from './CollapsibleSection';
+import { KeyStats, CompactStats } from './KeyStats';
+import { WeekFeed } from './WeekFeed';
+import { ActionModal } from './ActionModal';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -20,6 +17,114 @@ interface GameScreenProps {
   onFireBandmate?: (bandmateId: string) => void;
 }
 
+// Story panel component - shows current narrative and recent history
+function StoryPanel({
+  currentMessage,
+  flavorText,
+  weekReflection,
+  weekLogs,
+}: {
+  currentMessage: string | null;
+  flavorText?: string | null;
+  weekReflection?: string | null;
+  weekLogs: GameState['weekLogs'];
+}) {
+  // Get recent logs, excluding the most recent if we have a currentMessage (to avoid duplication)
+  const logsToShow = currentMessage && weekLogs.length > 0
+    ? weekLogs.slice(0, -1)
+    : weekLogs;
+  const recentLogs = logsToShow.slice(-5).reverse();
+
+  return (
+    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 h-full flex flex-col">
+      <div className="text-lg font-bold text-white mb-3">The Story So Far</div>
+
+      {/* Current week section */}
+      {(currentMessage || flavorText || weekReflection) && (
+        <div className="mb-4 pb-4 border-b border-gray-700">
+          <div className="text-xs text-green-400 uppercase tracking-wide mb-2">This Week</div>
+
+          {/* Main action narrative */}
+          {currentMessage && (
+            <p className="text-gray-100 leading-relaxed mb-2">{currentMessage}</p>
+          )}
+
+          {/* Flavor text - small narrative moment */}
+          {flavorText && (
+            <div className="border-l-2 border-amber-600/50 pl-3 mb-2">
+              <p className="text-amber-200/80 text-sm italic leading-relaxed">{flavorText}</p>
+            </div>
+          )}
+
+          {/* Week reflection - narrator voice */}
+          {weekReflection && (
+            <p className="text-gray-400 text-sm italic">{weekReflection}</p>
+          )}
+        </div>
+      )}
+
+      {/* Previous weeks / Journal */}
+      <div className="flex-1 overflow-y-auto">
+        {recentLogs.length > 0 ? (
+          <div className="space-y-3">
+            <div className="text-xs text-gray-500 uppercase tracking-wide">Previous Weeks</div>
+            {recentLogs.map((log, index) => {
+              const weekInYear = ((log.week - 1) % 52) + 1;
+              const year = Math.floor((log.week - 1) / 52) + 1;
+              return (
+                <div key={index} className="text-sm">
+                  <span className="text-gray-500 text-xs">Y{year} W{weekInYear}: </span>
+                  <span className="text-gray-400">{log.actionResult}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : !currentMessage && (
+          <p className="text-gray-500 italic">Your journey begins...</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Band roster (compact)
+function BandRoster({
+  bandmates,
+  onFireBandmate,
+}: {
+  bandmates: GameState['bandmates'];
+  onFireBandmate?: (id: string) => void;
+}) {
+  const active = bandmates.filter(b => b.status === 'active');
+
+  if (active.length === 0) {
+    return <p className="text-gray-500 text-sm">No band members</p>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {active.map(member => (
+        <div key={member.id} className="flex items-center justify-between text-sm">
+          <span className="text-gray-300">
+            {member.name} <span className="text-gray-500">({member.role})</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">L:{member.loyalty}</span>
+            {onFireBandmate && (
+              <button
+                onClick={() => onFireBandmate(member.id)}
+                className="text-red-400 hover:text-red-300 text-xs"
+              >
+                Fire
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function GameScreen({
   gameState,
   availableActions,
@@ -29,103 +134,89 @@ export function GameScreen({
   onSelectAction,
   onFireBandmate,
 }: GameScreenProps) {
-  const { player, bandName, week, year, weekLogs, bandmates } = gameState;
+  const { player, bandName, week, year, weekLogs, bandmates, newsItems } = gameState;
   const activeBandmates = bandmates.filter(b => b.status === 'active');
+
+  // Track if we're currently revealing the week's events
+  const [isRevealing, setIsRevealing] = useState(false);
+  const [lastRevealedWeek, setLastRevealedWeek] = useState(0);
+
+  // Start revealing when we have new content for a new week
+  useEffect(() => {
+    if (currentMessage && week !== lastRevealedWeek) {
+      setIsRevealing(true);
+    }
+  }, [currentMessage, week, lastRevealedWeek]);
+
+  // Handle when reveal animation completes
+  const handleRevealComplete = useCallback(() => {
+    setIsRevealing(false);
+    setLastRevealedWeek(week);
+  }, [week]);
+
+  // Determine if actions should be shown
+  const showActions = !isRevealing || !currentMessage;
 
   return (
     <>
-      {/* ===== MOBILE LAYOUT (default) ===== */}
+      {/* ===== MOBILE LAYOUT ===== */}
       <div className="lg:hidden min-h-screen bg-black flex flex-col">
-        {/* Sticky Header */}
-        <MobileHeader
-          player={player}
-          week={week}
-          year={year}
-          bandName={bandName || 'FAILING UP'}
-        />
+        {/* Compact header with key info */}
+        <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-700 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-lg font-bold text-red-500">{bandName || 'FAILING UP'}</h1>
+            <span className="text-xs text-gray-500">Y{year} W{((week - 1) % 52) + 1}</span>
+          </div>
+          <CompactStats player={player} />
+        </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-20">
-          {/* Narrative Block */}
-          {(currentMessage || flavorText || weekReflection) && (
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
-              {/* Main action narrative */}
-              {currentMessage && (
-                <p className="text-gray-100 text-sm leading-relaxed">{currentMessage}</p>
-              )}
+          {/* Story Feed - Primary content using WeekFeed */}
+          <WeekFeed
+            currentWeek={week}
+            currentMessage={currentMessage}
+            flavorText={flavorText}
+            weekReflection={weekReflection}
+            weekLogs={weekLogs}
+            newsItems={newsItems}
+            isRevealing={isRevealing}
+            onRevealComplete={handleRevealComplete}
+            typewriterSpeed={20}
+            maxHistoryItems={10}
+          />
 
-              {/* Flavor text - small narrative moment */}
-              {flavorText && (
-                <div className="border-l-2 border-amber-600/50 pl-3">
-                  <p className="text-amber-200/80 text-sm italic leading-relaxed">{flavorText}</p>
-                </div>
-              )}
-
-              {/* Week reflection - narrator voice */}
-              {weekReflection && (
-                <p className="text-gray-400 text-xs italic mt-2 pt-2 border-t border-gray-700">
-                  {weekReflection}
-                </p>
-              )}
+          {/* Revealing indicator for mobile */}
+          {isRevealing && (
+            <div className="text-center py-2">
+              <span className="text-gray-500 text-sm animate-pulse">Week unfolding...</span>
             </div>
           )}
 
-          {/* Actions - PRIMARY CONTENT */}
-          <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
-            <div className="text-white font-bold mb-3 flex items-center gap-2">
-              <span className="text-lg">⚡</span>
-              <span>What do you do this week?</span>
+          {/* Stats */}
+          <CollapsibleSection title="📊 Your Status" defaultOpen={false}>
+            <div className="p-3">
+              <KeyStats
+                player={player}
+                week={week}
+                year={year}
+                bandName={bandName}
+              />
             </div>
-            <MobileActionPanel
-              availableActions={availableActions}
-              onSelectAction={onSelectAction}
-            />
-          </div>
-
-          {/* Collapsible Stats */}
-          <CollapsibleSection title="📊 Stats" defaultOpen={false}>
-            <MobileStats player={player} />
           </CollapsibleSection>
 
-          {/* Collapsible Band */}
+          {/* Band */}
           <CollapsibleSection
-            title="🎤 Band"
+            title="🎤 The Band"
             badge={activeBandmates.length}
             defaultOpen={false}
           >
             <div className="p-3">
-              {activeBandmates.length > 0 ? (
-                <div className="space-y-2">
-                  {activeBandmates.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between bg-gray-800 rounded p-2"
-                    >
-                      <div>
-                        <span className="text-white text-sm">{member.name}</span>
-                        <span className="text-gray-500 text-xs ml-2">({member.role})</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-400">Loyalty: {member.loyalty}</span>
-                        {onFireBandmate && (
-                          <button
-                            onClick={() => onFireBandmate(member.id)}
-                            className="text-red-400 hover:text-red-300 px-2 py-1"
-                          >
-                            Fire
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">No active band members</p>
-              )}
+              <BandRoster bandmates={bandmates} onFireBandmate={onFireBandmate} />
             </div>
           </CollapsibleSection>
 
-          {/* Collapsible Log */}
+          {/* History */}
           <CollapsibleSection
             title="📜 History"
             badge={weekLogs.length}
@@ -152,39 +243,60 @@ export function GameScreen({
       {/* ===== DESKTOP LAYOUT ===== */}
       <div className="hidden lg:block min-h-screen bg-black p-4">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-red-500">{bandName || 'FAILING UP'}</h1>
-          </div>
+          {/* Two-row layout like the original game */}
 
-          {/* Main Layout */}
-          <div className="grid grid-cols-12 gap-4">
-            {/* Left Column - Stats & Band */}
-            <div className="col-span-3">
-              <StatsDisplay player={player} week={week} year={year} />
-              <BandDisplay bandmates={bandmates} onFireBandmate={onFireBandmate} />
-            </div>
-
-            {/* Center Column - Actions */}
-            <div className="col-span-5">
-              <ActionPanel
-                availableActions={availableActions}
-                onSelectAction={onSelectAction}
-              />
-            </div>
-
-            {/* Right Column - Log */}
-            <div className="col-span-4">
-              <WeeklyLog
+          {/* TOP ROW: Unified Story Feed (left) + Stats (right) */}
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            {/* Story Feed - Takes up 2/3 of the width */}
+            <div className="col-span-2">
+              <WeekFeed
+                currentWeek={week}
                 currentMessage={currentMessage}
                 flavorText={flavorText}
                 weekReflection={weekReflection}
                 weekLogs={weekLogs}
+                newsItems={newsItems}
+                isRevealing={isRevealing}
+                onRevealComplete={handleRevealComplete}
+                typewriterSpeed={15}
+                maxHistoryItems={15}
               />
             </div>
+
+            {/* Stats & Band Panel */}
+            <div className="space-y-4">
+              {/* Key Stats */}
+              <KeyStats
+                player={player}
+                week={week}
+                year={year}
+                bandName={bandName}
+              />
+
+              {/* Band Roster */}
+              <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                <div className="text-sm font-bold text-white mb-2">The Band</div>
+                <BandRoster bandmates={bandmates} onFireBandmate={onFireBandmate} />
+              </div>
+            </div>
           </div>
+
+          {/* Revealing indicator */}
+          {isRevealing && (
+            <div className="mt-4 text-center">
+              <span className="text-gray-500 text-sm animate-pulse">Week {week} unfolding...</span>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Action Selection Modal */}
+      <ActionModal
+        isOpen={showActions}
+        availableActions={availableActions}
+        gameState={gameState}
+        onSelectAction={onSelectAction}
+      />
     </>
   );
 }

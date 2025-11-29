@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Difficulty, TalentLevel, MusicStyle } from '@/engine/types';
 import { getAvailableDifficulties } from '@/engine/difficulty';
 import { getAvailableTalentLevels, getAvailableStyles, generateBandName } from '@/engine/state';
@@ -14,20 +14,27 @@ const difficulties = getAvailableDifficulties();
 const talentLevels = getAvailableTalentLevels();
 const musicStyles = getAvailableStyles();
 
-// Generate initial band name
-const initialBandName = generateBandName(createRandom(generateSeed()));
-
 export function StartScreen({ onStart }: StartScreenProps) {
   const [playerName, setPlayerName] = useState('');
-  const [bandName, setBandName] = useState(initialBandName);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [talentLevel, setTalentLevel] = useState<TalentLevel>('average');
   const [preferredStyle, setPreferredStyle] = useState<MusicStyle>('indie');
 
+  // Band name is generated based on selected style
+  const [bandName, setBandName] = useState(() =>
+    generateBandName(createRandom(generateSeed()), 'indie')
+  );
+
+  // Regenerate band name when style changes
+  useEffect(() => {
+    const rng = createRandom(generateSeed());
+    setBandName(generateBandName(rng, preferredStyle));
+  }, [preferredStyle]);
+
   const handleGenerateBandName = useCallback(() => {
     const rng = createRandom(generateSeed());
-    setBandName(generateBandName(rng));
-  }, []);
+    setBandName(generateBandName(rng, preferredStyle));
+  }, [preferredStyle]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +80,34 @@ export function StartScreen({ onStart }: StartScreenProps) {
             />
           </div>
 
-          {/* Band Name Input */}
+          {/* Style Preference Selection - BEFORE band name so suggestions are relevant */}
+          <div>
+            <label className="block text-gray-400 text-sm mb-2">
+              What's your sound?
+            </label>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+              {musicStyles.map((style) => (
+                <button
+                  key={style.id}
+                  type="button"
+                  onClick={() => setPreferredStyle(style.id)}
+                  className={`
+                    p-2 rounded-lg border transition-all text-center
+                    ${preferredStyle === style.id
+                      ? 'border-purple-500 bg-purple-500/10'
+                      : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                    }
+                  `}
+                >
+                  <div className={`font-bold text-xs ${preferredStyle === style.id ? 'text-purple-400' : 'text-gray-300'}`}>
+                    {style.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Band Name Input - After sound so suggestions match genre */}
           <div>
             <label htmlFor="bandName" className="block text-gray-400 text-sm mb-2">
               What's your band called?
@@ -96,6 +130,9 @@ export function StartScreen({ onStart }: StartScreenProps) {
                 🎲
               </button>
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Hit 🎲 for {musicStyles.find(s => s.id === preferredStyle)?.name.toLowerCase()} name suggestions
+            </p>
           </div>
 
           {/* Talent Level Selection */}
@@ -122,33 +159,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                     {level.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Style Preference Selection */}
-          <div>
-            <label className="block text-gray-400 text-sm mb-2">
-              Your sound
-            </label>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-              {musicStyles.map((style) => (
-                <button
-                  key={style.id}
-                  type="button"
-                  onClick={() => setPreferredStyle(style.id)}
-                  className={`
-                    p-2 rounded-lg border transition-all text-center
-                    ${preferredStyle === style.id
-                      ? 'border-purple-500 bg-purple-500/10'
-                      : 'border-gray-700 bg-gray-800 hover:border-gray-600'
-                    }
-                  `}
-                >
-                  <div className={`font-bold text-xs ${preferredStyle === style.id ? 'text-purple-400' : 'text-gray-300'}`}>
-                    {style.name}
                   </div>
                 </button>
               ))}

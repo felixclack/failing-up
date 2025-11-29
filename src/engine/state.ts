@@ -16,6 +16,7 @@ import {
 } from './types';
 import { createRandom, generateSeed, RandomGenerator } from './random';
 import { getDifficultySettings, getWeeklyLivingCost } from './difficulty';
+import { generateStartingRivals } from './rivals';
 
 // =============================================================================
 // Constants
@@ -221,35 +222,80 @@ export function getTotalFans(player: Player): number {
 }
 
 // =============================================================================
-// Band Name Generation
+// Band Name Generation (Genre-Specific)
 // =============================================================================
 
-const BAND_PREFIXES = [
+// Genre-specific word banks for band names
+const GENRE_BAND_NAMES: Record<MusicStyle, {
+  prefixes: string[];
+  nouns: string[];
+  formats: string[]; // patterns like "{prefix} {noun}", "The {noun}", etc.
+}> = {
+  glam: {
+    prefixes: ['Pretty', 'Poison', 'Sweet', 'Lipstick', 'Velvet', 'Neon', 'Electric', 'Glitter', 'Cherry', 'Hot'],
+    nouns: ['Crue', 'Poison', 'Roses', 'Dolls', 'Kitten', 'Vixen', 'Leopard', 'Stiletto', 'Babylon', 'Reckless', 'Danger', 'Excess', 'Vice', 'Trash', 'Addiction'],
+    formats: ['{prefix} {noun}', 'The {noun}', '{noun}', '{prefix} {prefix}'],
+  },
+  punk: {
+    prefixes: ['Dead', 'Angry', 'Sick', 'Raw', 'Rotten', 'Smashed', 'Broken', 'Filthy', 'Bloody', 'Nasty'],
+    nouns: ['Kennedys', 'Pistols', 'Clash', 'Discharge', 'Germs', 'Misfits', 'Zeros', 'Rejects', 'Outcasts', 'Bastards', 'Youth', 'Rats', 'Punks', 'Chaos', 'Void'],
+    formats: ['The {noun}', 'The {prefix} {noun}', '{prefix} {noun}', '{noun}'],
+  },
+  grunge: {
+    prefixes: ['Stone', 'Mud', 'Pearl', 'Screaming', 'Skin', 'Dirt', 'Tar', 'Sludge', 'Fuzz', 'Black'],
+    nouns: ['Garden', 'Temple', 'Chains', 'Honey', 'Jam', 'Trees', 'Yard', 'Pilots', 'Pumpkins', 'Hole', 'Flower', 'Drain', 'Pit', 'Mess', 'Heap'],
+    formats: ['{prefix} {noun}', 'The {noun}', '{noun}', '{prefix} {prefix}'],
+  },
+  alt: {
+    prefixes: ['Modest', 'Broken', 'Neutral', 'Arctic', 'Vampire', 'Arcade', 'Crystal', 'Silver', 'Paper', 'Glass'],
+    nouns: ['Strokes', 'Killers', 'Smiths', 'Cure', 'Pixies', 'Blur', 'Pulp', 'Weekend', 'Machine', 'Hearts', 'Dreams', 'Bells', 'Echo', 'Youth', 'Wave'],
+    formats: ['The {noun}', '{prefix} {noun}', 'The {prefix} {noun}', '{noun}'],
+  },
+  metal: {
+    prefixes: ['Black', 'Iron', 'Death', 'Dark', 'Blood', 'Doom', 'Grave', 'Steel', 'Night', 'Storm'],
+    nouns: ['Sabbath', 'Maiden', 'Priest', 'Throne', 'Slaughter', 'Destroyer', 'Prophecy', 'Carnage', 'Oblivion', 'Testament', 'Hammer', 'Anvil', 'Fortress', 'Legion', 'Reaper'],
+    formats: ['{prefix} {noun}', '{noun}', 'The {prefix} {noun}', '{prefix} {prefix}'],
+  },
+  indie: {
+    prefixes: ['Beach', 'Fleet', 'Tame', 'Wild', 'Bon', 'Local', 'Young', 'Strange', 'Pale', 'Bright'],
+    nouns: ['Foxes', 'House', 'Impala', 'Natives', 'Neighbourhood', 'Bones', 'Eyes', 'Flowers', 'Waves', 'Coast', 'Mountain', 'Lake', 'Forest', 'Garden', 'Morning'],
+    formats: ['The {noun}', '{prefix} {noun}', 'The {prefix} {noun}', '{noun}'],
+  },
+};
+
+// Fallback generic names (used if no style specified)
+const GENERIC_PREFIXES = [
   'The', 'Black', 'Red', 'Dead', 'Electric', 'Burning', 'Screaming', 'Midnight',
   'Savage', 'Neon', 'Dark', 'Violent', 'Iron', 'Steel', 'Atomic', 'Sonic',
 ];
 
-const BAND_NOUNS = [
+const GENERIC_NOUNS = [
   'Roses', 'Skulls', 'Wolves', 'Snakes', 'Razors', 'Bullets', 'Flames', 'Shadows',
   'Daggers', 'Vipers', 'Ravens', 'Thunder', 'Lightning', 'Storm', 'Riot', 'Chaos',
   'Velvet', 'Ashes', 'Chains', 'Blades', 'Hearts', 'Demons', 'Angels', 'Rebels',
 ];
 
-const BAND_SUFFIXES = [
-  '', '', '', '', // Higher chance of no suffix
-  'Underground', 'Society', 'Collective', 'Machine', 'Army', 'Syndicate',
-];
+export function generateBandName(rng: RandomGenerator, style?: MusicStyle): string {
+  if (style && GENRE_BAND_NAMES[style]) {
+    const genreData = GENRE_BAND_NAMES[style];
+    const format = genreData.formats[rng.nextInt(0, genreData.formats.length - 1)];
+    const prefix1 = genreData.prefixes[rng.nextInt(0, genreData.prefixes.length - 1)];
+    const prefix2 = genreData.prefixes[rng.nextInt(0, genreData.prefixes.length - 1)];
+    const noun = genreData.nouns[rng.nextInt(0, genreData.nouns.length - 1)];
 
-export function generateBandName(rng: RandomGenerator): string {
-  const usePrefix = rng.next() < 0.7; // 70% chance of prefix
-  const useSuffix = rng.next() < 0.2; // 20% chance of suffix
+    return format
+      .replace('{prefix}', prefix1)
+      .replace('{prefix}', prefix2) // For double-prefix formats
+      .replace('{noun}', noun)
+      .trim();
+  }
 
-  const prefix = usePrefix ? BAND_PREFIXES[rng.nextInt(0, BAND_PREFIXES.length - 1)] : '';
-  const noun = BAND_NOUNS[rng.nextInt(0, BAND_NOUNS.length - 1)];
-  const suffix = useSuffix ? BAND_SUFFIXES[rng.nextInt(0, BAND_SUFFIXES.length - 1)] : '';
+  // Fallback to generic generation
+  const usePrefix = rng.next() < 0.7;
+  const prefix = usePrefix ? GENERIC_PREFIXES[rng.nextInt(0, GENERIC_PREFIXES.length - 1)] : '';
+  const noun = GENERIC_NOUNS[rng.nextInt(0, GENERIC_NOUNS.length - 1)];
 
-  const parts = [prefix, noun, suffix].filter(p => p);
-  return parts.join(' ');
+  return prefix ? `${prefix} ${noun}` : noun;
 }
 
 // =============================================================================
@@ -332,6 +378,9 @@ export function createGameState(options: CreateGameOptions): GameState {
 
   const bandmates = createStartingBand(rng);
 
+  // Generate starting rival bands
+  const rivalBands = generateStartingRivals(rng);
+
   return {
     player,
     bandName,
@@ -339,6 +388,10 @@ export function createGameState(options: CreateGameOptions): GameState {
     songs: [],
     albums: [],
     labelDeals: [],
+
+    // Rival bands and industry news
+    rivalBands,
+    newsItems: [],
 
     week: 1,
     year: 1,
