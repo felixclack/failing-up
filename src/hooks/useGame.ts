@@ -12,7 +12,7 @@ import { createRandom } from '@/engine/random';
 import { applyStatDeltas, getTotalFans, weekToYear } from '@/engine/state';
 import { ALL_EVENTS } from '@/data/events';
 import { ALL_TEMPTATIONS, canTemptationTrigger } from '@/data/temptations';
-import { generateManagerCandidates, hireManager, fireManager, tryGenerateSupportSlotOffer, acceptSupportSlotOffer, declineSupportSlotOffer, clearExpiredOffers } from '@/engine/manager';
+import { generateManagerCandidates, hireManager, fireManager, tryGenerateSupportSlotOffer, acceptSupportSlotOffer, declineSupportSlotOffer, clearExpiredOffers, resolveGig } from '@/engine/manager';
 
 // Studio options with cost and quality tradeoffs
 export const STUDIO_OPTIONS: StudioOption[] = [
@@ -147,7 +147,10 @@ export function useGame(): UseGameReturn {
   // Tour selection state
   const [showTourSelection, setShowTourSelection] = useState(false);
 
-  // Check for pending gig decision when game state changes
+  // Track the week when the player last took an action (to show gig notification AFTER action)
+  const [lastActionWeek, setLastActionWeek] = useState<number>(0);
+
+  // Check for pending gig decision AFTER player has taken their action
   useEffect(() => {
     if (!gameState) return;
 
@@ -160,15 +163,17 @@ export function useGame(): UseGameReturn {
     if (pendingGigDecision) return; // Already showing a decision
     if (pendingEvent || pendingNaming || pendingTemptation || pendingGigResult) return; // Other modals active
 
-    // If there's an upcoming gig for THIS week that hasn't been accepted/declined yet
-    // Only show if we have a manager (needed to display the modal)
+    // Only show gig notification AFTER player has taken their action for this week
+    // The gig is scheduled for the previous week (state.week before increment)
+    // After action, gameState.week advances, so the gig week would be gameState.week - 1
+    // But we check upcomingGig.week === lastActionWeek to ensure action was taken
     if (gameState.manager &&
         gameState.upcomingGig &&
-        gameState.upcomingGig.week === gameState.week &&
+        gameState.upcomingGig.week === lastActionWeek &&
         gameState.upcomingGig.accepted === undefined) {
       setPendingGigDecision(gameState.upcomingGig);
     }
-  }, [gameState, pendingGigDecision, pendingEvent, pendingNaming, pendingTemptation, pendingGigResult]);
+  }, [gameState, pendingGigDecision, pendingEvent, pendingNaming, pendingTemptation, pendingGigResult, lastActionWeek]);
 
   // Track last week to detect week changes for support slot offer generation
   const [lastCheckedWeek, setLastCheckedWeek] = useState<number>(0);
@@ -262,7 +267,10 @@ export function useGame(): UseGameReturn {
     if (pendingEvent) return; // Can't act while event pending
     if (pendingNaming) return; // Can't act while naming pending
     if (pendingTemptation) return; // Can't act while temptation pending
-    if (pendingGigDecision) return; // Can't act while gig decision pending
+    // Note: We DON'T block for pendingGigDecision - gig notification comes AFTER action
+
+    // Track that we're taking an action this week (for gig notification timing)
+    setLastActionWeek(gameState.week);
 
     // Handle TOUR action - show tour selection modal
     if (actionId === 'TOUR') {
@@ -660,13 +668,29 @@ export function useGame(): UseGameReturn {
   const acceptGig = useCallback(() => {
     if (!gameState || !pendingGigDecision) return;
 
-    // Mark the gig as accepted
+    // Resolve the gig immediately (player has already taken their action)
+    const gigRng = createRandom(gameState.seed + pendingGigDecision.week + 2000);
     const acceptedGig = { ...pendingGigDecision, accepted: true };
-    setGameState({
+    const result = resolveGig(gameState, acceptedGig, gigRng);
+
+    // Apply gig stat changes
+    const newState: GameState = {
       ...gameState,
-      upcomingGig: acceptedGig,
-    });
+      player: {
+        ...gameState.player,
+        money: gameState.player.money + result.earnings,
+        skill: Math.min(100, gameState.player.skill + result.skillGain),
+        hype: Math.max(0, Math.min(100, gameState.player.hype + result.hypeChange)),
+        cred: Math.max(0, Math.min(100, gameState.player.cred + result.credChange)),
+        coreFans: gameState.player.coreFans + result.fansGained,
+      },
+      lastGigResult: result,
+      upcomingGig: null, // Clear the gig
+    };
+
+    setGameState(newState);
     setPendingGigDecision(null);
+    setPendingGigResult(result); // Show the gig outcome modal
   }, [gameState, pendingGigDecision]);
 
   const declineGig = useCallback(() => {
