@@ -265,7 +265,7 @@ export const FLAVOR_EVENTS: FlavorEvent[] = [
   },
   {
     id: 'FLAVOR_BAND_MOMENT',
-    text: 'After rehearsal, everyone hung around. No one wanted to leave. Moments like this, you remember why you started a band instead of going solo.',
+    text: 'The band hung out after, just talking. No one wanted to leave. Moments like this, you remember why you started a band instead of going solo.',
     conditions: { hasBandmates: true },
   },
   {
