@@ -267,7 +267,7 @@ export function ActionModal({
       {/* ===== MOBILE: Bottom Sheet ===== */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-50">
         {/* Backdrop - semi-transparent so you can see story */}
-        <div className="fixed inset-0 bg-black/40" />
+        <div className="fixed inset-0 bg-black/40 pointer-events-none" />
 
         {/* Bottom Sheet */}
         <div className="relative bg-gray-900 border-t border-gray-700 rounded-t-xl shadow-2xl max-h-[70vh] overflow-hidden flex flex-col">

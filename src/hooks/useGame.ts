@@ -137,11 +137,20 @@ export function useGame(): UseGameReturn {
   // Check for pending gig decision when game state changes
   useEffect(() => {
     if (!gameState) return;
+
+    // Clear gig decision if there's no manager (can't show the modal)
+    if (pendingGigDecision && !gameState.manager) {
+      setPendingGigDecision(null);
+      return;
+    }
+
     if (pendingGigDecision) return; // Already showing a decision
     if (pendingEvent || pendingNaming || pendingTemptation || pendingGigResult) return; // Other modals active
 
     // If there's an upcoming gig for THIS week that hasn't been accepted/declined yet
-    if (gameState.upcomingGig &&
+    // Only show if we have a manager (needed to display the modal)
+    if (gameState.manager &&
+        gameState.upcomingGig &&
         gameState.upcomingGig.week === gameState.week &&
         gameState.upcomingGig.accepted === undefined) {
       setPendingGigDecision(gameState.upcomingGig);
@@ -450,7 +459,26 @@ export function useGame(): UseGameReturn {
   // Gig result handler
   const dismissGigResult = useCallback(() => {
     setPendingGigResult(null);
-  }, []);
+
+    // After dismissing gig result, finalize state and check for events
+    if (pendingEventState && lastTurnResult) {
+      // Check if there are triggered events to show
+      if (lastTurnResult.triggeredEvents.length > 0) {
+        setPendingEvent(lastTurnResult.triggeredEvents[0]);
+        // Keep pendingEventState for event resolution
+      } else {
+        // No events, finalize the state
+        setGameState(pendingEventState);
+        setPendingEventState(null);
+
+        // Check for temptation
+        const temptation = checkForTemptation(pendingEventState);
+        if (temptation) {
+          setPendingTemptation(temptation);
+        }
+      }
+    }
+  }, [pendingEventState, lastTurnResult, checkForTemptation]);
 
   // Gig decision handlers
   const acceptGig = useCallback(() => {
