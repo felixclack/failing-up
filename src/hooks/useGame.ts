@@ -24,6 +24,10 @@ export interface UseGameReturn {
   // Naming state
   pendingNaming: PendingNaming | null;
 
+  // Narrative state
+  flavorText: string | null;
+  weekReflection: string | null;
+
   // Actions
   startGame: (options: CreateGameOptions) => void;
   takeAction: (actionId: ActionId) => void;
@@ -297,6 +301,16 @@ export function useGame(): UseGameReturn {
     return lastTurnResult.actionResult;
   }, [lastTurnResult]);
 
+  const flavorText = useMemo(() => {
+    if (!lastTurnResult) return null;
+    return lastTurnResult.flavorText || null;
+  }, [lastTurnResult]);
+
+  const weekReflection = useMemo(() => {
+    if (!lastTurnResult) return null;
+    return lastTurnResult.weekReflection || null;
+  }, [lastTurnResult]);
+
   return {
     gameState,
     isStarted: gameState !== null,
@@ -304,6 +318,8 @@ export function useGame(): UseGameReturn {
     pendingEvent,
     eventOutcome,
     pendingNaming,
+    flavorText,
+    weekReflection,
     startGame,
     takeAction,
     handleEventChoice,

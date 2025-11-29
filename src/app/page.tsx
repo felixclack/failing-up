@@ -25,6 +25,8 @@ export default function Home() {
     pendingNaming,
     confirmNaming,
     cancelNaming,
+    flavorText,
+    weekReflection,
   } = useGame();
 
   // Not started - show start screen
@@ -56,6 +58,8 @@ export default function Home() {
         gameState={gameState}
         availableActions={availableActions}
         currentMessage={currentWeekLog}
+        flavorText={flavorText}
+        weekReflection={weekReflection}
         onSelectAction={takeAction}
         onFireBandmate={handleFireBandmate}
       />

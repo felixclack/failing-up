@@ -5,6 +5,8 @@ import { ACTIONS } from '@/engine/actions';
 
 interface WeeklyLogProps {
   currentMessage: string | null;
+  flavorText?: string | null;
+  weekReflection?: string | null;
   weekLogs: WeekLog[];
   maxEntries?: number;
 }
@@ -23,36 +25,63 @@ function LogEntry({ log, isLatest }: { log: WeekLog; isLatest: boolean }) {
       }
     `}>
       <div className="flex justify-between items-start mb-1">
-        <span className="font-semibold text-white">{action?.label || log.action}</span>
+        <span className="font-semibold text-white text-sm">{action?.label || log.action}</span>
         <span className="text-xs text-gray-500">Y{year} W{weekInYear}</span>
       </div>
-      <p className="text-sm text-gray-300">{log.actionResult}</p>
+      <p className="text-sm text-gray-300 leading-relaxed">{log.actionResult}</p>
     </div>
   );
 }
 
-export function WeeklyLog({ currentMessage, weekLogs, maxEntries = 5 }: WeeklyLogProps) {
+export function WeeklyLog({
+  currentMessage,
+  flavorText,
+  weekReflection,
+  weekLogs,
+  maxEntries = 5,
+}: WeeklyLogProps) {
   const recentLogs = weekLogs.slice(-maxEntries).reverse();
 
   return (
     <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
       <div className="text-lg font-bold text-white mb-4">
-        Recent Activity
+        The Story So Far
       </div>
 
-      {/* Current week result */}
-      {currentMessage && (
-        <div className="mb-4 p-4 bg-gray-800 rounded-lg border border-green-700">
-          <div className="text-xs text-green-400 uppercase tracking-wide mb-1">
+      {/* Current week narrative block */}
+      {(currentMessage || flavorText || weekReflection) && (
+        <div className="mb-4 p-4 bg-gray-800 rounded-lg border border-gray-600 space-y-3">
+          <div className="text-xs text-green-400 uppercase tracking-wide">
             This Week
           </div>
-          <p className="text-white">{currentMessage}</p>
+
+          {/* Main action narrative */}
+          {currentMessage && (
+            <p className="text-gray-100 leading-relaxed">{currentMessage}</p>
+          )}
+
+          {/* Flavor text - small narrative moment */}
+          {flavorText && (
+            <div className="border-l-2 border-amber-600/50 pl-3 mt-3">
+              <p className="text-amber-200/80 text-sm italic leading-relaxed">{flavorText}</p>
+            </div>
+          )}
+
+          {/* Week reflection - narrator voice */}
+          {weekReflection && (
+            <p className="text-gray-400 text-sm italic mt-3 pt-3 border-t border-gray-700">
+              {weekReflection}
+            </p>
+          )}
         </div>
       )}
 
       {/* Previous weeks */}
       {recentLogs.length > 0 ? (
         <div className="space-y-2">
+          <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+            Previous Weeks
+          </div>
           {recentLogs.map((log, index) => (
             <LogEntry
               key={log.week}
@@ -63,7 +92,7 @@ export function WeeklyLog({ currentMessage, weekLogs, maxEntries = 5 }: WeeklyLo
         </div>
       ) : (
         <div className="text-gray-500 text-sm italic">
-          No activity yet. Choose an action to begin your career.
+          The pages are blank. Your story hasn't started yet. Choose an action to begin.
         </div>
       )}
     </div>

@@ -393,6 +393,9 @@ export interface TurnResult {
   triggeredEvents: GameEvent[];
   isGameOver: boolean;
   gameOverReason: GameOverReason | null;
+  // Narrative flavor
+  flavorText?: string;       // Small narrative moment (no choice required)
+  weekReflection?: string;   // End-of-week narrator reflection
 }
 
 export interface ActionResult {

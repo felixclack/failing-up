@@ -45,6 +45,12 @@ import {
   calculateStreamingIncomeAfterDeal,
   applyStreamingRecoupment,
 } from './economy';
+import {
+  getActionMessage,
+  selectFlavorEvent,
+  getWeekReflection,
+  NarrativeContext,
+} from './narrative';
 
 // =============================================================================
 // Constants
@@ -538,11 +544,41 @@ export function processTurnWithEvents(
     };
   }
 
-  // 10. Record in week log
+  // 10. Generate narrative content
+  // Create a separate RNG for narrative to not affect game mechanics
+  const narrativeRng = createRandom(state.seed + state.week + 5000);
+
+  // Build narrative context
+  const narrativeContext: NarrativeContext = {
+    state: newState,
+    actionId,
+    rng: narrativeRng,
+    actionSuccess: actionResult.success,
+    moneyChange: actionResult.statChanges.money,
+    fansGained: (actionResult.statChanges.coreFans || 0) + (actionResult.statChanges.casualListeners || 0),
+    songTitle: actionResult.producedSong?.title || actionResult.message.match(/"([^"]+)"/)?.[1],
+  };
+
+  // Get narrative action message
+  const narrativeMessage = getActionMessage(narrativeContext);
+
+  // Check for flavor event (only if no major event triggered)
+  let flavorText: string | undefined;
+  if (triggeredEvents.length === 0) {
+    const flavorEvent = selectFlavorEvent(newState, narrativeRng);
+    if (flavorEvent) {
+      flavorText = flavorEvent.text;
+    }
+  }
+
+  // Check for week reflection
+  const weekReflection = getWeekReflection(newState, narrativeRng) || undefined;
+
+  // 11. Record in week log
   const weekLog: WeekLog = {
     week: state.week,
     action: actionId,
-    actionResult: actionResult.message,
+    actionResult: narrativeMessage,
     events: [], // Will be updated when event is resolved
     statChanges: actionResult.statChanges,
   };
@@ -554,10 +590,12 @@ export function processTurnWithEvents(
 
   return {
     newState,
-    actionResult: actionResult.message,
+    actionResult: narrativeMessage,
     triggeredEvents,
     isGameOver: newState.isGameOver,
     gameOverReason: newState.gameOverReason,
+    flavorText,
+    weekReflection,
   };
 }
 

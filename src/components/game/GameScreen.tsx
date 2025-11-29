@@ -14,6 +14,8 @@ interface GameScreenProps {
   gameState: GameState;
   availableActions: ActionId[];
   currentMessage: string | null;
+  flavorText?: string | null;
+  weekReflection?: string | null;
   onSelectAction: (actionId: ActionId) => void;
   onFireBandmate?: (bandmateId: string) => void;
 }
@@ -22,6 +24,8 @@ export function GameScreen({
   gameState,
   availableActions,
   currentMessage,
+  flavorText,
+  weekReflection,
   onSelectAction,
   onFireBandmate,
 }: GameScreenProps) {
@@ -42,10 +46,27 @@ export function GameScreen({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-20">
-          {/* Current Message */}
-          {currentMessage && (
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-              <p className="text-gray-200 text-sm">{currentMessage}</p>
+          {/* Narrative Block */}
+          {(currentMessage || flavorText || weekReflection) && (
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
+              {/* Main action narrative */}
+              {currentMessage && (
+                <p className="text-gray-100 text-sm leading-relaxed">{currentMessage}</p>
+              )}
+
+              {/* Flavor text - small narrative moment */}
+              {flavorText && (
+                <div className="border-l-2 border-amber-600/50 pl-3">
+                  <p className="text-amber-200/80 text-sm italic leading-relaxed">{flavorText}</p>
+                </div>
+              )}
+
+              {/* Week reflection - narrator voice */}
+              {weekReflection && (
+                <p className="text-gray-400 text-xs italic mt-2 pt-2 border-t border-gray-700">
+                  {weekReflection}
+                </p>
+              )}
             </div>
           )}
 
@@ -156,6 +177,8 @@ export function GameScreen({
             <div className="col-span-4">
               <WeeklyLog
                 currentMessage={currentMessage}
+                flavorText={flavorText}
+                weekReflection={weekReflection}
                 weekLogs={weekLogs}
               />
             </div>
