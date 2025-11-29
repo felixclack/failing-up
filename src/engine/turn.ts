@@ -512,27 +512,8 @@ export function processTurnWithEvents(
     }
   }
 
-  // 3.5. Resolve gig if there's one scheduled for this week
+  // 3.5. Gig resolution moved to after action (step 7.3)
   let gigResult: GigResult | undefined;
-  if (newState.upcomingGig && newState.upcomingGig.week === state.week) {
-    const gigRng = createRandom(state.seed + state.week + 2000);
-    gigResult = resolveGig(newState, newState.upcomingGig, gigRng);
-
-    // Apply gig stat changes
-    newState = {
-      ...newState,
-      player: {
-        ...newState.player,
-        money: newState.player.money + gigResult.earnings,
-        skill: Math.min(100, newState.player.skill + gigResult.skillGain),
-        hype: Math.max(0, Math.min(100, newState.player.hype + gigResult.hypeChange)),
-        cred: Math.max(0, Math.min(100, newState.player.cred + gigResult.credChange)),
-        coreFans: newState.player.coreFans + gigResult.fansGained,
-      },
-      lastGigResult: gigResult,
-      upcomingGig: null, // Clear the gig
-    };
-  }
 
   // 4. Check and activate new arcs
   newState = checkAndActivateArcs(newState, ALL_ARCS);
@@ -591,6 +572,29 @@ export function processTurnWithEvents(
 
   // 7. Apply end-of-week stat updates
   newState = applyEndOfWeekUpdates(newState);
+
+  // 7.3. Resolve gig if there's one scheduled for this week AND it was accepted
+  if (newState.upcomingGig &&
+      newState.upcomingGig.week === state.week &&
+      newState.upcomingGig.accepted === true) {
+    const gigRng = createRandom(state.seed + state.week + 2000);
+    gigResult = resolveGig(newState, newState.upcomingGig, gigRng);
+
+    // Apply gig stat changes
+    newState = {
+      ...newState,
+      player: {
+        ...newState.player,
+        money: newState.player.money + gigResult.earnings,
+        skill: Math.min(100, newState.player.skill + gigResult.skillGain),
+        hype: Math.max(0, Math.min(100, newState.player.hype + gigResult.hypeChange)),
+        cred: Math.max(0, Math.min(100, newState.player.cred + gigResult.credChange)),
+        coreFans: newState.player.coreFans + gigResult.fansGained,
+      },
+      lastGigResult: gigResult,
+      upcomingGig: null, // Clear the gig
+    };
+  }
 
   // 7.5 Try to book a gig for next week (if no gig already scheduled)
   if (!newState.upcomingGig && !newState.player.flags.onTour) {

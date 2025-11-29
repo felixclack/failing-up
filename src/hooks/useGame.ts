@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption, Temptation, TemptationChoice, Manager, GigResult } from '@/engine/types';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption, Temptation, TemptationChoice, Manager, GigResult, Gig } from '@/engine/types';
 import { createGameState, CreateGameOptions } from '@/engine/state';
 import { processTurnWithEvents } from '@/engine/turn';
 import { getAvailableActions, generateSongTitle } from '@/engine/actions';
@@ -9,11 +9,10 @@ import { applyEventChoice } from '@/engine/events';
 import { fireBandmate } from '@/engine/band';
 import { generateAlbumTitle } from '@/engine/economy';
 import { createRandom } from '@/engine/random';
-import { applyStatDeltas } from '@/engine/state';
+import { applyStatDeltas, getTotalFans } from '@/engine/state';
 import { ALL_EVENTS } from '@/data/events';
 import { ALL_TEMPTATIONS, canTemptationTrigger } from '@/data/temptations';
 import { generateManagerCandidates, hireManager, fireManager } from '@/engine/manager';
-import { getTotalFans } from '@/engine/state';
 
 // Studio options with cost and quality tradeoffs
 export const STUDIO_OPTIONS: StudioOption[] = [
@@ -70,6 +69,7 @@ export interface UseGameReturn {
 
   // Gig state
   pendingGigResult: GigResult | null;
+  pendingGigDecision: Gig | null;  // Gig waiting for player to accept/decline
 
   // Manager state
   showManagerHiring: boolean;
@@ -95,6 +95,10 @@ export interface UseGameReturn {
   cancelManagerHiring: () => void;
   handleFireManager: () => void;
   dismissGigResult: () => void;
+
+  // Gig decision actions
+  acceptGig: () => void;
+  declineGig: () => void;
 
   // Computed
   availableActions: ActionId[];
@@ -123,9 +127,26 @@ export function useGame(): UseGameReturn {
   // Gig result state
   const [pendingGigResult, setPendingGigResult] = useState<GigResult | null>(null);
 
+  // Gig decision state (when player needs to accept/decline a booked gig)
+  const [pendingGigDecision, setPendingGigDecision] = useState<Gig | null>(null);
+
   // Manager hiring state
   const [showManagerHiring, setShowManagerHiring] = useState(false);
   const [managerCandidates, setManagerCandidates] = useState<Manager[]>([]);
+
+  // Check for pending gig decision when game state changes
+  useEffect(() => {
+    if (!gameState) return;
+    if (pendingGigDecision) return; // Already showing a decision
+    if (pendingEvent || pendingNaming || pendingTemptation || pendingGigResult) return; // Other modals active
+
+    // If there's an upcoming gig for THIS week that hasn't been accepted/declined yet
+    if (gameState.upcomingGig &&
+        gameState.upcomingGig.week === gameState.week &&
+        gameState.upcomingGig.accepted === undefined) {
+      setPendingGigDecision(gameState.upcomingGig);
+    }
+  }, [gameState, pendingGigDecision, pendingEvent, pendingNaming, pendingTemptation, pendingGigResult]);
 
   const startGame = useCallback((options: CreateGameOptions) => {
     const newState = createGameState(options);
@@ -140,6 +161,7 @@ export function useGame(): UseGameReturn {
     setTemptationOutcome(null);
     setTemptationCooldowns({});
     setPendingGigResult(null);
+    setPendingGigDecision(null);
     setShowManagerHiring(false);
     setManagerCandidates([]);
   }, []);
@@ -186,6 +208,7 @@ export function useGame(): UseGameReturn {
     if (pendingEvent) return; // Can't act while event pending
     if (pendingNaming) return; // Can't act while naming pending
     if (pendingTemptation) return; // Can't act while temptation pending
+    if (pendingGigDecision) return; // Can't act while gig decision pending
 
     // Handle all RECORD actions - show studio selection first
     if (actionId === 'RECORD_SINGLE' || actionId === 'RECORD_EP' || actionId === 'RECORD_ALBUM') {
@@ -326,7 +349,7 @@ export function useGame(): UseGameReturn {
         setPendingTemptation(temptation);
       }
     }
-  }, [gameState, pendingEvent, pendingNaming, pendingTemptation, pendingGigResult, checkForTemptation]);
+  }, [gameState, pendingEvent, pendingNaming, pendingTemptation, pendingGigDecision, pendingGigResult, checkForTemptation]);
 
   const handleEventChoice = useCallback((choice: EventChoice) => {
     if (!pendingEvent || !pendingEventState) return;
@@ -428,6 +451,37 @@ export function useGame(): UseGameReturn {
   const dismissGigResult = useCallback(() => {
     setPendingGigResult(null);
   }, []);
+
+  // Gig decision handlers
+  const acceptGig = useCallback(() => {
+    if (!gameState || !pendingGigDecision) return;
+
+    // Mark the gig as accepted
+    const acceptedGig = { ...pendingGigDecision, accepted: true };
+    setGameState({
+      ...gameState,
+      upcomingGig: acceptedGig,
+    });
+    setPendingGigDecision(null);
+  }, [gameState, pendingGigDecision]);
+
+  const declineGig = useCallback(() => {
+    if (!gameState || !pendingGigDecision) return;
+
+    // Cancel the gig - may hurt manager relationship/reputation
+    // Small hit to manager's ability to book future gigs
+    const updatedManager = gameState.manager ? {
+      ...gameState.manager,
+      reputation: Math.max(0, gameState.manager.reputation - 5),
+    } : null;
+
+    setGameState({
+      ...gameState,
+      upcomingGig: null,
+      manager: updatedManager,
+    });
+    setPendingGigDecision(null);
+  }, [gameState, pendingGigDecision]);
 
   // Studio selection handler
   const selectStudio = useCallback((studioQuality: StudioQuality) => {
@@ -658,6 +712,7 @@ export function useGame(): UseGameReturn {
     flavorText,
     weekReflection,
     pendingGigResult,
+    pendingGigDecision,
     showManagerHiring,
     managerCandidates,
     startGame,
@@ -677,6 +732,8 @@ export function useGame(): UseGameReturn {
     cancelManagerHiring,
     handleFireManager,
     dismissGigResult,
+    acceptGig,
+    declineGig,
     availableActions,
     currentWeekLog,
   };

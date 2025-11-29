@@ -187,6 +187,7 @@ export interface Gig {
   headlinerName?: string;  // If support, who are we opening for
   expectedTurnout: number; // Estimated attendance
   guaranteedPay: number;   // What manager negotiated
+  accepted?: boolean;      // Has the player accepted this gig?
 }
 
 export interface GigResult {

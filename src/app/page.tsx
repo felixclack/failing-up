@@ -9,6 +9,7 @@ import { NamingModal } from '@/components/game/NamingModal';
 import { StudioSelectionModal } from '@/components/game/StudioSelectionModal';
 import { TemptationModal, TemptationOutcome } from '@/components/game/TemptationModal';
 import { GigOutcomeModal } from '@/components/game/GigOutcomeModal';
+import { GigNotificationModal } from '@/components/game/GigNotificationModal';
 import { ManagerHireModal } from '@/components/game/ManagerPanel';
 
 export default function Home() {
@@ -44,6 +45,9 @@ export default function Home() {
     cancelManagerHiring,
     handleFireManager,
     dismissGigResult,
+    pendingGigDecision,
+    acceptGig,
+    declineGig,
   } = useGame();
 
   // Not started - show start screen
@@ -82,6 +86,16 @@ export default function Home() {
         onHireManager={openManagerHiring}
         onFireManager={handleFireManager}
       />
+
+      {/* Gig Notification Modal - show when manager books a gig */}
+      {pendingGigDecision && gameState.manager && (
+        <GigNotificationModal
+          gig={pendingGigDecision}
+          managerName={gameState.manager.name}
+          onAccept={acceptGig}
+          onDecline={declineGig}
+        />
+      )}
 
       {/* Gig Outcome Modal - show when a gig resolves */}
       {pendingGigResult && (
