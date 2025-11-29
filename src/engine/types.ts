@@ -406,6 +406,8 @@ export interface EventTriggerConditions {
   minBandmates?: number;
   // Flag requirements
   hasFlag?: string;
+  // Gig requirements
+  hadGigThisWeek?: boolean;  // Only trigger if a gig happened this week
   // Genre requirements
   preferredStyle?: MusicStyle;
 }

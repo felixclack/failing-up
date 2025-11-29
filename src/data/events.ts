@@ -345,9 +345,8 @@ const healthEvents: GameEvent[] = [
 const gigEvents: GameEvent[] = [
   {
     id: 'EV_HECKLER',
-    triggerConditions: {},
+    triggerConditions: { hadGigThisWeek: true },
     weight: 3,
-    // Gigs now automatic - requiredAction removed
     textIntro: 'Some drunk in the front row won\'t shut up. They\'re killing your vibe and the crowd\'s getting distracted.',
     choices: [
       {
@@ -372,9 +371,8 @@ const gigEvents: GameEvent[] = [
   },
   {
     id: 'EV_SOUND_ISSUES',
-    triggerConditions: {},
+    triggerConditions: { hadGigThisWeek: true },
     weight: 3,
-    // Gigs now automatic - requiredAction removed
     textIntro: 'Halfway through the set, your guitar cuts out. Dead silence. The crowd waits.',
     choices: [
       {
@@ -402,9 +400,9 @@ const gigEvents: GameEvent[] = [
     triggerConditions: {
       minFans: 1000,
       minHype: 30,
+      hadGigThisWeek: true,
     },
     weight: 2,
-    // Gigs now automatic - requiredAction removed
     textIntro: 'After the show, someone in a sharp suit approaches. "I\'m with a label. We should talk."',
     choices: [
       {

@@ -94,6 +94,13 @@ export function checkTriggerConditions(
     return false;
   }
 
+  // Gig check - only trigger if a gig happened this week
+  if (conditions.hadGigThisWeek !== undefined) {
+    const hadGig = state.lastGigResult !== null &&
+                   state.lastGigResult.gig.week === state.week - 1; // Gig was resolved last turn
+    if (conditions.hadGigThisWeek !== hadGig) return false;
+  }
+
   return true;
 }
 
