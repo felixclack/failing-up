@@ -11,6 +11,8 @@ import { TemptationModal, TemptationOutcome } from '@/components/game/Temptation
 import { GigOutcomeModal } from '@/components/game/GigOutcomeModal';
 import { GigNotificationModal } from '@/components/game/GigNotificationModal';
 import { ManagerHireModal } from '@/components/game/ManagerPanel';
+import { TourSelectionModal } from '@/components/game/TourSelectionModal';
+import { getTotalFans } from '@/engine/state';
 
 export default function Home() {
   const {
@@ -48,6 +50,9 @@ export default function Home() {
     pendingGigDecision,
     acceptGig,
     declineGig,
+    showTourSelection,
+    selectTour,
+    cancelTourSelection,
   } = useGame();
 
   // Not started - show start screen
@@ -112,6 +117,17 @@ export default function Home() {
           playerMoney={gameState.player.money}
           onSelectManager={selectManager}
           onCancel={cancelManagerHiring}
+        />
+      )}
+
+      {/* Tour Selection Modal - show when player wants to go on tour */}
+      {showTourSelection && (
+        <TourSelectionModal
+          playerMoney={gameState.player.money}
+          playerFans={getTotalFans(gameState.player)}
+          hasLabelDeal={gameState.player.flags.hasLabelDeal}
+          onSelectTour={selectTour}
+          onCancel={cancelTourSelection}
         />
       )}
 

@@ -66,18 +66,34 @@ export const ACTIONS: Record<ActionId, Action> = {
 
   TOUR: {
     id: 'TOUR',
-    label: 'Tour',
-    description: 'Go on the road. Big exposure but exhausting. Need released music first.',
+    label: 'Go on Tour',
+    description: 'Hit the road for 2-4 weeks. DIY with £1500+, or bigger tours with more backing.',
     requirements: {
-      hasLabelDeal: true,
       hasReleasedMusic: true, // Can't tour without something to promote
       minHealth: 40,
+      noActiveRecording: true, // Can't tour while recording
+      noActiveTour: true,      // Can't start new tour while on one
     },
     baseEffects: {
-      fans: 100,
-      hype: 10,
-      health: -10,
-      burnout: 10,
+      // Base effects applied per week, modified by tour type
+      fans: 50,
+      hype: 5,
+      health: -5,
+      burnout: 5,
+    },
+    hasSpecialLogic: true,
+  },
+
+  TOUR_WEEK: {
+    id: 'TOUR_WEEK',
+    label: 'Continue Tour',
+    description: 'Another week on the road. Play shows, meet fans, stay alive.',
+    requirements: {
+      hasActiveTour: true, // Only available when on tour
+    },
+    baseEffects: {
+      health: -5,
+      burnout: 5,
     },
     hasSpecialLogic: true,
   },
@@ -295,6 +311,14 @@ export function isActionAvailable(actionId: ActionId, state: GameState): boolean
     return false;
   }
   if (requirements.noActiveRecording && state.recordingSession) {
+    return false;
+  }
+
+  // Check tour session requirements
+  if (requirements.hasActiveTour && !state.tourSession) {
+    return false;
+  }
+  if (requirements.noActiveTour && state.tourSession) {
     return false;
   }
 

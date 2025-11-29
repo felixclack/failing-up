@@ -30,6 +30,7 @@ export type ActionId =
   | 'WRITE'
   | 'REHEARSE'
   | 'TOUR'
+  | 'TOUR_WEEK'    // Continue an active tour
   | 'RECORD_SINGLE'
   | 'RECORD_EP'
   | 'RECORD_ALBUM'
@@ -333,6 +334,9 @@ export interface ActionRequirements {
   // Recording session requirements
   hasActiveRecording?: boolean;  // Must have an active recording session
   noActiveRecording?: boolean;   // Cannot have an active recording session
+  // Tour session requirements
+  hasActiveTour?: boolean;       // Must have an active tour session
+  noActiveTour?: boolean;        // Cannot have an active tour session
 }
 
 export interface Action {
@@ -527,6 +531,20 @@ export interface RecordingSession {
   costPerWeek: number;
 }
 
+// Tour type matches economy.ts TourType
+export type TourType = 'diy' | 'small' | 'support' | 'headline';
+
+export interface TourSession {
+  type: TourType;
+  weeksRemaining: number;      // Weeks left on tour
+  weeksTotal: number;          // Total weeks for this tour
+  showsPlayed: number;         // Total shows played so far
+  totalEarnings: number;       // Running total of tour earnings
+  totalCosts: number;          // Running total of tour costs
+  fansGained: number;          // Running total of fans gained
+  costPerWeek: number;         // Weekly costs for this tour type
+}
+
 export interface GameState {
   // Core state
   player: Player;
@@ -549,6 +567,9 @@ export interface GameState {
 
   // Active recording session (multi-week)
   recordingSession: RecordingSession | null;
+
+  // Active tour session (multi-week)
+  tourSession: TourSession | null;
 
   // Time tracking
   week: number;        // Current week (1-520)

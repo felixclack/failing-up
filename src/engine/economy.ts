@@ -10,6 +10,7 @@ import {
   SalesTier,
   CreativeControl,
   DealType,
+  TourType,
 } from './types';
 import { RandomGenerator } from './random';
 import { getTotalFans } from './state';
@@ -106,9 +107,6 @@ export const SALES_TIER_DATA: Record<SalesTier, { minSales: number; royaltyMulti
 // =============================================================================
 // Tour Economics (UK Realistic Costs in £)
 // =============================================================================
-
-// Tour type configurations
-export type TourType = 'diy' | 'small' | 'support' | 'headline';
 
 export interface TourConfig {
   type: TourType;

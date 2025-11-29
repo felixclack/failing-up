@@ -401,6 +401,9 @@ export function createGameState(options: CreateGameOptions): GameState {
     // Recording session
     recordingSession: null,
 
+    // Tour session
+    tourSession: null,
+
     week: 1,
     year: 1,
 

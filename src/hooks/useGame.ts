@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption, Temptation, TemptationChoice, Manager, GigResult, Gig } from '@/engine/types';
+import { GameState, ActionId, TurnResult, GameEvent, EventChoice, PendingNaming, Song, RecordingSession, StudioQuality, StudioOption, Temptation, TemptationChoice, Manager, GigResult, Gig, TourType, TourSession } from '@/engine/types';
 import { createGameState, CreateGameOptions } from '@/engine/state';
 import { processTurnWithEvents } from '@/engine/turn';
 import { getAvailableActions, generateSongTitle } from '@/engine/actions';
 import { applyEventChoice } from '@/engine/events';
 import { fireBandmate } from '@/engine/band';
-import { generateAlbumTitle } from '@/engine/economy';
+import { generateAlbumTitle, TOUR_CONFIGS, getActive360Deal, TOUR_BASE_GUARANTEE, MERCH_PROFIT_PER_FAN } from '@/engine/economy';
 import { createRandom } from '@/engine/random';
-import { applyStatDeltas, getTotalFans } from '@/engine/state';
+import { applyStatDeltas, getTotalFans, weekToYear } from '@/engine/state';
 import { ALL_EVENTS } from '@/data/events';
 import { ALL_TEMPTATIONS, canTemptationTrigger } from '@/data/temptations';
 import { generateManagerCandidates, hireManager, fireManager } from '@/engine/manager';
@@ -100,6 +100,11 @@ export interface UseGameReturn {
   acceptGig: () => void;
   declineGig: () => void;
 
+  // Tour selection
+  showTourSelection: boolean;
+  selectTour: (tourType: TourType) => void;
+  cancelTourSelection: () => void;
+
   // Computed
   availableActions: ActionId[];
   currentWeekLog: string | null;
@@ -133,6 +138,9 @@ export function useGame(): UseGameReturn {
   // Manager hiring state
   const [showManagerHiring, setShowManagerHiring] = useState(false);
   const [managerCandidates, setManagerCandidates] = useState<Manager[]>([]);
+
+  // Tour selection state
+  const [showTourSelection, setShowTourSelection] = useState(false);
 
   // Check for pending gig decision when game state changes
   useEffect(() => {
@@ -173,6 +181,7 @@ export function useGame(): UseGameReturn {
     setPendingGigDecision(null);
     setShowManagerHiring(false);
     setManagerCandidates([]);
+    setShowTourSelection(false);
   }, []);
 
   // Helper to check and trigger a random temptation
@@ -218,6 +227,12 @@ export function useGame(): UseGameReturn {
     if (pendingNaming) return; // Can't act while naming pending
     if (pendingTemptation) return; // Can't act while temptation pending
     if (pendingGigDecision) return; // Can't act while gig decision pending
+
+    // Handle TOUR action - show tour selection modal
+    if (actionId === 'TOUR') {
+      setShowTourSelection(true);
+      return;
+    }
 
     // Handle all RECORD actions - show studio selection first
     if (actionId === 'RECORD_SINGLE' || actionId === 'RECORD_EP' || actionId === 'RECORD_ALBUM') {
@@ -311,6 +326,131 @@ export function useGame(): UseGameReturn {
       setLastTurnResult({
         newState,
         actionResult: `Another week in the studio working on "${session.title}". ${newWeeksRemaining} week${newWeeksRemaining > 1 ? 's' : ''} to go. Production at ${Math.floor(newProductionProgress)}%.`,
+        triggeredEvents: [],
+        isGameOver: false,
+        gameOverReason: null,
+      });
+      return;
+    }
+
+    // Handle TOUR_WEEK - continue tour session
+    if (actionId === 'TOUR_WEEK') {
+      if (!gameState.tourSession) return;
+
+      const session = gameState.tourSession;
+      const tourConfig = TOUR_CONFIGS[session.type];
+      const rng = createRandom(gameState.seed + gameState.week + 7000);
+
+      // Calculate weekly tour gig outcome
+      const totalFans = getTotalFans(gameState.player);
+      const baseGuarantee = TOUR_BASE_GUARANTEE[session.type];
+      const fanMultiplier = Math.log10(Math.max(100, totalFans)) / 2;
+      const hypeMultiplier = 1 + (gameState.player.hype / 100);
+      const showGuarantee = Math.floor(baseGuarantee * fanMultiplier * hypeMultiplier * tourConfig.revenueMultiplier);
+
+      // Shows per week based on tour type
+      const showsPerWeek = session.type === 'diy' ? 3 : session.type === 'small' ? 4 : session.type === 'support' ? 5 : 6;
+      const weeklyGuarantee = showGuarantee * showsPerWeek;
+
+      // Merch revenue
+      const grossMerch = Math.floor(gameState.player.coreFans * MERCH_PROFIT_PER_FAN * (session.type === 'headline' ? 3 : 1));
+
+      // Check for 360 deal cuts
+      const deal360 = getActive360Deal(gameState);
+      let labelCut = 0;
+      let netMerch = grossMerch;
+      let netGuarantee = weeklyGuarantee;
+
+      if (deal360) {
+        if (deal360.includesMerch && deal360.merchCut > 0) {
+          const merchLabelCut = Math.floor(grossMerch * deal360.merchCut);
+          netMerch = grossMerch - merchLabelCut;
+          labelCut += merchLabelCut;
+        }
+        if (deal360.includesTouring && deal360.touringCut > 0) {
+          const touringLabelCut = Math.floor(weeklyGuarantee * deal360.touringCut);
+          netGuarantee = weeklyGuarantee - touringLabelCut;
+          labelCut += touringLabelCut;
+        }
+      }
+
+      const weeklyRevenue = netGuarantee + netMerch;
+      const weeklyCosts = session.costPerWeek;
+
+      // Fans gained this week
+      const baseFansGained = Math.floor((gameState.player.hype * 2 + rng.nextInt(10, 50)) * tourConfig.fanMultiplier);
+      const weeklyFansGained = Math.floor(baseFansGained * (gameState.player.skill / 50));
+
+      // Hype gain
+      const weeklyHypeGain = rng.nextInt(2, 6);
+
+      const newWeeksRemaining = session.weeksRemaining - 1;
+      const updatedSession: TourSession = {
+        ...session,
+        weeksRemaining: newWeeksRemaining,
+        showsPlayed: session.showsPlayed + showsPerWeek,
+        totalEarnings: session.totalEarnings + weeklyRevenue,
+        totalCosts: session.totalCosts + weeklyCosts,
+        fansGained: session.fansGained + weeklyFansGained,
+      };
+
+      // Check if tour is complete
+      if (newWeeksRemaining <= 0) {
+        // Tour complete!
+        const netProfit = updatedSession.totalEarnings - updatedSession.totalCosts;
+
+        const newState: GameState = {
+          ...gameState,
+          tourSession: null,
+          player: {
+            ...gameState.player,
+            money: gameState.player.money + weeklyRevenue - weeklyCosts,
+            casualListeners: gameState.player.casualListeners + weeklyFansGained,
+            hype: Math.min(100, gameState.player.hype + weeklyHypeGain),
+            burnout: Math.min(100, gameState.player.burnout + 5),
+            health: Math.max(0, gameState.player.health - 3),
+            flags: { ...gameState.player.flags, onTour: false },
+          },
+          week: gameState.week + 1,
+          year: Math.floor(gameState.week / 52) + 1,
+        };
+
+        const profitText = netProfit >= 0 ? `Profit: £${netProfit.toLocaleString()}` : `Loss: £${Math.abs(netProfit).toLocaleString()}`;
+
+        setGameState(newState);
+        setLastTurnResult({
+          newState,
+          actionResult: `Tour complete! ${updatedSession.showsPlayed} shows played over ${updatedSession.weeksTotal} weeks. ${profitText}. Gained ${updatedSession.fansGained.toLocaleString()} new fans.`,
+          triggeredEvents: [],
+          isGameOver: false,
+          gameOverReason: null,
+        });
+        return;
+      }
+
+      // Tour continues
+      const newState: GameState = {
+        ...gameState,
+        tourSession: updatedSession,
+        player: {
+          ...gameState.player,
+          money: gameState.player.money + weeklyRevenue - weeklyCosts,
+          casualListeners: gameState.player.casualListeners + weeklyFansGained,
+          hype: Math.min(100, gameState.player.hype + weeklyHypeGain),
+          burnout: Math.min(100, gameState.player.burnout + 3),
+          health: Math.max(0, gameState.player.health - 2),
+        },
+        week: gameState.week + 1,
+        year: Math.floor(gameState.week / 52) + 1,
+      };
+
+      const netThisWeek = weeklyRevenue - weeklyCosts;
+      const labelCutText = labelCut > 0 ? ` (£${labelCut} to label)` : '';
+
+      setGameState(newState);
+      setLastTurnResult({
+        newState,
+        actionResult: `Week ${updatedSession.weeksTotal - newWeeksRemaining} of ${updatedSession.weeksTotal} on tour. Played ${showsPerWeek} shows. £${netThisWeek >= 0 ? '+' : ''}${netThisWeek.toLocaleString()} this week${labelCutText}. +${weeklyFansGained} fans. ${newWeeksRemaining} week${newWeeksRemaining > 1 ? 's' : ''} to go.`,
         triggeredEvents: [],
         isGameOver: false,
         gameOverReason: null,
@@ -511,6 +651,55 @@ export function useGame(): UseGameReturn {
     setPendingGigDecision(null);
   }, [gameState, pendingGigDecision]);
 
+  // Tour selection handlers
+  const selectTour = useCallback((tourType: TourType) => {
+    if (!gameState) return;
+
+    const tourConfig = TOUR_CONFIGS[tourType];
+
+    // Validate player can afford the tour
+    if (gameState.player.money < tourConfig.minMoney) return;
+    if (getTotalFans(gameState.player) < tourConfig.minFans) return;
+    if (tourConfig.requiresLabel && !gameState.player.flags.hasLabelDeal) return;
+
+    // Create tour session
+    const session: TourSession = {
+      type: tourType,
+      weeksRemaining: tourConfig.weeksRequired,
+      weeksTotal: tourConfig.weeksRequired,
+      showsPlayed: 0,
+      totalEarnings: 0,
+      totalCosts: tourConfig.upfrontCost,
+      fansGained: 0,
+      costPerWeek: tourConfig.weeklyBaseCost,
+    };
+
+    // Apply upfront cost and start tour
+    const newState: GameState = {
+      ...gameState,
+      tourSession: session,
+      player: {
+        ...gameState.player,
+        money: gameState.player.money - tourConfig.upfrontCost,
+        flags: { ...gameState.player.flags, onTour: true },
+      },
+    };
+
+    setGameState(newState);
+    setShowTourSelection(false);
+    setLastTurnResult({
+      newState,
+      actionResult: `You're hitting the road! ${tourConfig.name} kicks off - ${tourConfig.weeksRequired} weeks of shows ahead. £${tourConfig.upfrontCost.toLocaleString()} upfront costs paid.`,
+      triggeredEvents: [],
+      isGameOver: false,
+      gameOverReason: null,
+    });
+  }, [gameState]);
+
+  const cancelTourSelection = useCallback(() => {
+    setShowTourSelection(false);
+  }, []);
+
   // Studio selection handler
   const selectStudio = useCallback((studioQuality: StudioQuality) => {
     if (!pendingNaming || pendingNaming.type !== 'studio-selection' || !gameState) return;
@@ -683,6 +872,11 @@ export function useGame(): UseGameReturn {
       setPendingTemptation(null);
       setTemptationOutcome(null);
       setTemptationCooldowns({});
+      setPendingGigResult(null);
+      setPendingGigDecision(null);
+      setShowManagerHiring(false);
+      setManagerCandidates([]);
+      setShowTourSelection(false);
     }
   }, [lastOptions]);
 
@@ -698,6 +892,11 @@ export function useGame(): UseGameReturn {
     setPendingTemptation(null);
     setTemptationOutcome(null);
     setTemptationCooldowns({});
+    setPendingGigResult(null);
+    setPendingGigDecision(null);
+    setShowManagerHiring(false);
+    setManagerCandidates([]);
+    setShowTourSelection(false);
   }, []);
 
   const handleFireBandmate = useCallback((bandmateId: string) => {
@@ -762,6 +961,9 @@ export function useGame(): UseGameReturn {
     dismissGigResult,
     acceptGig,
     declineGig,
+    showTourSelection,
+    selectTour,
+    cancelTourSelection,
     availableActions,
     currentWeekLog,
   };
