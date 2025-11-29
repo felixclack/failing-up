@@ -6,6 +6,7 @@ import { GameScreen } from '@/components/game/GameScreen';
 import { EndingScreen } from '@/components/game/EndingScreen';
 import { EventModal, EventOutcome } from '@/components/game/EventModal';
 import { NamingModal } from '@/components/game/NamingModal';
+import { StudioSelectionModal } from '@/components/game/StudioSelectionModal';
 
 export default function Home() {
   const {
@@ -23,6 +24,7 @@ export default function Home() {
     handleEventChoice,
     dismissEventOutcome,
     pendingNaming,
+    selectStudio,
     confirmNaming,
     cancelNaming,
     flavorText,
@@ -81,8 +83,18 @@ export default function Home() {
         />
       )}
 
+      {/* Studio Selection Modal - show when player starts recording */}
+      {pendingNaming && pendingNaming.type === 'studio-selection' && (
+        <StudioSelectionModal
+          pending={pendingNaming}
+          playerMoney={gameState.player.money}
+          onSelectStudio={selectStudio}
+          onCancel={cancelNaming}
+        />
+      )}
+
       {/* Naming Modal - show when player writes a song or records an album */}
-      {pendingNaming && (
+      {pendingNaming && pendingNaming.type !== 'studio-selection' && (
         <NamingModal
           pending={pendingNaming}
           onConfirm={confirmNaming}
