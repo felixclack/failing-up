@@ -17,11 +17,6 @@ const ACTION_GROUPS: { label: string; icon: string; actions: ActionId[] }[] = [
     actions: ['WRITE', 'REHEARSE', 'PLAY_LOCAL_GIG', 'RECORD', 'RELEASE_SINGLE'],
   },
   {
-    label: 'Digital',
-    icon: '📱',
-    actions: ['POST_CONTENT'],
-  },
-  {
     label: 'Career',
     icon: '📈',
     actions: ['TOUR', 'PROMOTE', 'NETWORK'],

@@ -137,6 +137,7 @@ export const moreMoneyEvents: GameEvent[] = [
     id: 'EV_VAN_BREAKDOWN',
     triggerConditions: {},
     weight: 3,
+    requiredAction: 'PLAY_LOCAL_GIG',
     textIntro: 'The van won\'t start. Smoke\'s coming from under the hood. You\'ve got a show tonight.',
     choices: [
       {

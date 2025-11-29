@@ -16,7 +16,7 @@ const socialMediaEvents: GameEvent[] = [
       minFollowers: 1000,
     },
     weight: 3,
-    requiredAction: 'POST_CONTENT',
+    requiredAction: 'PROMOTE',
     textIntro: 'One of your posts is blowing up! The algorithm gods have smiled upon you. Comments are flooding in.',
     choices: [
       {

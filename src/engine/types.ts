@@ -37,8 +37,7 @@ export type ActionId =
   | 'PARTY'
   | 'SIDE_JOB'
   // Streaming era actions
-  | 'RELEASE_SINGLE'
-  | 'POST_CONTENT';
+  | 'RELEASE_SINGLE';
 
 export type GameOverReason =
   | 'death'
@@ -277,6 +276,8 @@ export interface EventTriggerConditions {
   minBandmates?: number;
   // Flag requirements
   hasFlag?: string;
+  // Genre requirements
+  preferredStyle?: MusicStyle;
 }
 
 export interface EventChoice {

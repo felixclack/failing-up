@@ -112,15 +112,15 @@ export const ACTIONS: Record<ActionId, Action> = {
 
   PROMOTE: {
     id: 'PROMOTE',
-    label: 'Promote / Press',
-    description: 'Do interviews, photo shoots, media appearances.',
+    label: 'Promote',
+    description: 'Press interviews, social media, fan engagement. Small chance to go viral.',
     requirements: {},
     baseEffects: {
-      hype: 5,
-      fans: 10,
+      hype: 4,
+      followers: 40,
       burnout: 2,
     },
-    hasSpecialLogic: true, // Cred can go up or down
+    hasSpecialLogic: true, // Cred can change, viral chance
   },
 
   NETWORK: {
@@ -183,19 +183,6 @@ export const ACTIONS: Record<ActionId, Action> = {
       burnout: 1,
     },
     hasSpecialLogic: true, // Requires unreleased song, updates song streaming stats
-  },
-
-  POST_CONTENT: {
-    id: 'POST_CONTENT',
-    label: 'Post Content',
-    description: 'Social media posts, videos, and fan engagement. Builds following and can go viral.',
-    requirements: {},
-    baseEffects: {
-      followers: 50,
-      hype: 2,
-      burnout: 1,
-    },
-    hasSpecialLogic: true, // Small chance of viral, variable engagement
   },
 };
 
@@ -430,8 +417,8 @@ export function executeAction(
     case 'RELEASE_SINGLE':
       return executeReleaseSingle(state, rng);
 
-    case 'POST_CONTENT':
-      return executePostContent(state, rng);
+    case 'PROMOTE':
+      return executePromote(state, rng);
 
     // Actions without special logic just apply base effects
     default:
@@ -466,12 +453,65 @@ function getDefaultActionMessage(actionId: ActionId): string {
       return 'What a night. Things got pretty wild...';
     case 'SIDE_JOB':
       return 'Another week at the day job. At least the bills are paid.';
-    case 'PROMOTE':
-      return 'Did some press this week. Getting the word out.';
     case 'NETWORK':
       return 'Made some industry connections. Could pay off later.';
     default:
       return 'Week complete.';
+  }
+}
+
+/**
+ * Execute PROMOTE action
+ * Combines traditional press/media with social media content
+ * Includes viral chance and variable engagement
+ */
+function executePromote(state: GameState, rng: RandomGenerator): ActionResult {
+  const baseEffects = { ...ACTIONS.PROMOTE.baseEffects };
+
+  // Small viral chance (4-10% based on algoBoost)
+  const viralChance = 0.04 + (state.player.algoBoost / 800);
+  const wentViral = rng.next() < viralChance;
+
+  if (wentViral) {
+    // Viral hit!
+    const viralFollowers = rng.nextInt(1500, 6000);
+    const viralCasualListeners = rng.nextInt(400, 1500);
+    const coreFansGain = rng.nextInt(15, 40);
+
+    return {
+      success: true,
+      message: 'Something you posted blew up! The algorithm blessed you this week.',
+      statChanges: {
+        ...baseEffects,
+        followers: viralFollowers,
+        casualListeners: viralCasualListeners,
+        coreFans: coreFansGain,
+        algoBoost: rng.nextInt(8, 18),
+        hype: rng.nextInt(6, 12),
+        burnout: 3,
+      },
+    };
+  } else {
+    // Normal promote week - mix of press and social
+    const followers = rng.nextInt(25, 80);
+    const coreFansGain = rng.nextInt(3, 12);
+    const hype = rng.nextInt(2, 5);
+    const algoBoost = rng.nextInt(0, 3);
+    // Cred can go slightly up or down
+    const credChange = rng.nextInt(-2, 3);
+
+    return {
+      success: true,
+      message: 'Did some press and posted content. Steady progress.',
+      statChanges: {
+        ...baseEffects,
+        followers,
+        coreFans: coreFansGain,
+        hype,
+        algoBoost,
+        cred: credChange,
+      },
+    };
   }
 }
 
@@ -527,53 +567,3 @@ function executeReleaseSingle(state: GameState, rng: RandomGenerator): ActionRes
   };
 }
 
-/**
- * Execute POST_CONTENT action
- * Regular content posting with small viral chance
- */
-function executePostContent(state: GameState, rng: RandomGenerator): ActionResult {
-  const baseEffects = { ...ACTIONS.POST_CONTENT.baseEffects };
-
-  // Small viral chance (5-12% based on algoBoost)
-  const viralChance = 0.05 + (state.player.algoBoost / 700);
-  const wentViral = rng.next() < viralChance;
-
-  if (wentViral) {
-    // Viral hit!
-    const viralFollowers = rng.nextInt(2000, 8000);
-    const viralCasualListeners = rng.nextInt(500, 2000);
-    const coreFansGain = rng.nextInt(20, 50);
-
-    return {
-      success: true,
-      message: 'Your post went viral! The algorithm blessed you this week.',
-      statChanges: {
-        ...baseEffects,
-        followers: viralFollowers,
-        casualListeners: viralCasualListeners,
-        coreFans: coreFansGain,
-        algoBoost: rng.nextInt(10, 20),
-        hype: rng.nextInt(5, 12),
-        burnout: 3, // Viral success still costs energy
-      },
-    };
-  } else {
-    // Normal week - steady small gains
-    const followers = rng.nextInt(30, 100);
-    const coreFansGain = rng.nextInt(5, 15);
-    const hype = rng.nextInt(1, 3);
-    const algoBoost = rng.nextInt(0, 3);
-
-    return {
-      success: true,
-      message: 'Posted content this week. Slow and steady.',
-      statChanges: {
-        ...baseEffects,
-        followers,
-        coreFans: coreFansGain,
-        hype,
-        algoBoost,
-      },
-    };
-  }
-}

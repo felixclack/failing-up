@@ -40,7 +40,11 @@ export function WeeklyLog({
   weekLogs,
   maxEntries = 5,
 }: WeeklyLogProps) {
-  const recentLogs = weekLogs.slice(-maxEntries).reverse();
+  // When currentMessage is displayed in "This Week", skip the most recent log to avoid duplication
+  const logsToShow = currentMessage && weekLogs.length > 0
+    ? weekLogs.slice(0, -1)  // Exclude the latest entry (it's shown in "This Week")
+    : weekLogs;
+  const recentLogs = logsToShow.slice(-maxEntries).reverse();
 
   return (
     <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">

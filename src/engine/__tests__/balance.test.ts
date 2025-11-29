@@ -311,14 +311,14 @@ describe('Balance Analysis', () => {
 
   describe('Viral Mechanics Balance', () => {
     it('viral chance is low but reward is high', () => {
-      // Viral chance should be 5-12% for POST_CONTENT based on algoBoost
+      // Viral chance should be 4-10% for PROMOTE based on algoBoost
       // This is tested implicitly through the action, but we verify the concept
-      const baseViralChance = 0.05;
-      const maxAlgoBoostBonus = 100 / 700; // ~0.14 max
+      const baseViralChance = 0.04;
+      const maxAlgoBoostBonus = 100 / 800; // ~0.125 max
       const totalMaxChance = baseViralChance + maxAlgoBoostBonus;
 
-      expect(baseViralChance).toBe(0.05); // 5% base
-      expect(totalMaxChance).toBeLessThanOrEqual(0.20); // Max ~19%
+      expect(baseViralChance).toBe(0.04); // 4% base
+      expect(totalMaxChance).toBeLessThanOrEqual(0.20); // Max ~16.5%
     });
 
     it('viral multiplier significantly boosts streams', () => {
@@ -344,16 +344,16 @@ describe('Balance Analysis', () => {
   describe('AlgoBoost Decay Balance', () => {
     it('algoBoost decays at sustainable rate', () => {
       // Decay is 3 per week
-      // POST_CONTENT normal gains: 0-3 algoBoost
-      // POST_CONTENT viral success: +10-20 algoBoost
+      // PROMOTE normal gains: 0-3 algoBoost
+      // PROMOTE viral success: +8-18 algoBoost
       const decayRate = 3;
-      const postContentGainAvg = 1.5; // Rough average from normal posting
-      const viralSuccessMin = 10;
+      const promoteGainAvg = 1.5; // Rough average from normal promotion
+      const viralSuccessMin = 8;
 
-      // Regular posting roughly maintains algoBoost (loses ~1.5 per week average)
+      // Regular promoting roughly maintains algoBoost (loses ~1.5 per week average)
       // Occasional viral success boosts significantly
-      expect(decayRate - postContentGainAvg).toBeLessThan(2); // Manageable decay
-      expect(viralSuccessMin / decayRate).toBeGreaterThan(3); // Viral gives 3+ weeks of buffer
+      expect(decayRate - promoteGainAvg).toBeLessThan(2); // Manageable decay
+      expect(viralSuccessMin / decayRate).toBeGreaterThan(2); // Viral gives 2+ weeks of buffer
     });
   });
 

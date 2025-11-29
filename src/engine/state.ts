@@ -110,12 +110,12 @@ export function getAvailableStyles(): Array<{
   description: string;
 }> {
   return [
-    { id: 'glam', ...MUSIC_STYLES.glam },
-    { id: 'punk', ...MUSIC_STYLES.punk },
-    { id: 'grunge', ...MUSIC_STYLES.grunge },
     { id: 'alt', ...MUSIC_STYLES.alt },
-    { id: 'metal', ...MUSIC_STYLES.metal },
+    { id: 'glam', ...MUSIC_STYLES.glam },
+    { id: 'grunge', ...MUSIC_STYLES.grunge },
     { id: 'indie', ...MUSIC_STYLES.indie },
+    { id: 'metal', ...MUSIC_STYLES.metal },
+    { id: 'punk', ...MUSIC_STYLES.punk },
   ];
 }
 

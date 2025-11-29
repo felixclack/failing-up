@@ -128,13 +128,24 @@ const TOUR_MESSAGES = {
   ],
 };
 
-const PROMOTE_MESSAGES = [
-  'You handed out flyers until your hands went numb. Guerrilla marketing. Very DIY. Very broke.',
-  'Updated all your socials. Sent emails to bloggers. Begged a college radio station to give you a spin. The hustle never stops.',
-  'You spent the week being your own hype man. Someone has to believe in you. Might as well be you.',
-  'Promotion is the unglamorous part they don\'t put in the movies. But you did it anyway.',
-  'Postered half the city. Your face is on every telephone pole and bulletin board. Fame, in its most literal form.',
-];
+const PROMOTE_MESSAGES = {
+  normal: [
+    'You handed out flyers until your hands went numb. Guerrilla marketing. Very DIY. Very broke.',
+    'Updated all your socials. Sent emails to bloggers. Begged a college radio station to give you a spin. The hustle never stops.',
+    'You spent the week being your own hype man. Someone has to believe in you. Might as well be you.',
+    'Promotion is the unglamorous part they don\'t put in the movies. But you did it anyway.',
+    'Postered half the city. Your face is on every telephone pole and bulletin board. Fame, in its most literal form.',
+    'Fed the algorithm. Liked, commented, shared. The modern version of working the room.',
+    'Another post, another tiny bid for relevance. The internet is hungry. You fed it.',
+    'Did some press, updated the socials. Let the people know you\'re still alive and making noise.',
+  ],
+  viral: [
+    'Something caught. The numbers are climbing. Your phone won\'t stop buzzing. This is either the start of something or a very good day.',
+    'You went viral. For a minute, the whole internet knew your name. Make it count.',
+    'The post exploded. Shares, reposts, quotes. For one shining moment, the algorithm loved you.',
+    'Something you posted blew up. Everyone\'s talking. This is your fifteen minutes — use them.',
+  ],
+};
 
 const NETWORK_MESSAGES = [
   'Shook hands with people who might matter someday. Or might not. Industry parties are just job fairs with better lighting.',
@@ -183,20 +194,6 @@ const RELEASE_SINGLE_MESSAGES = [
   'Released "{title}" to the algorithms. May the robots be merciful.',
   '"{title}" is live. Now comes the waiting. The refreshing. The hoping.',
 ];
-
-const POST_CONTENT_MESSAGES = {
-  normal: [
-    'Posted something. The void yelled back. Engagement, they call it.',
-    'Fed the algorithm. Liked, commented, shared. The modern version of working the room.',
-    'Updated the socials. Let the people know you\'re still alive and still making noise.',
-    'Another post, another tiny bid for relevance. The internet is hungry. You fed it.',
-  ],
-  viral: [
-    'Something caught. The numbers are climbing. Your phone won\'t stop buzzing. This is either the start of something or a very good day. Hard to tell which.',
-    'You went viral. For a minute, the whole internet knew your name. Make it count.',
-    'The post exploded. Shares, reposts, quotes. For one shining moment, the algorithm loved you.',
-  ],
-};
 
 // =============================================================================
 // Flavor Events
@@ -444,8 +441,13 @@ export function getActionMessage(context: NarrativeContext): string {
       return pick(TOUR_MESSAGES.ongoing);
     }
 
-    case 'PROMOTE':
-      return pick(PROMOTE_MESSAGES);
+    case 'PROMOTE': {
+      // Check if they went viral (big follower gain)
+      const messages = (fansGained && fansGained > 500)
+        ? PROMOTE_MESSAGES.viral
+        : PROMOTE_MESSAGES.normal;
+      return pick(messages);
+    }
 
     case 'NETWORK':
       return pick(NETWORK_MESSAGES);
@@ -463,14 +465,6 @@ export function getActionMessage(context: NarrativeContext): string {
 
     case 'RELEASE_SINGLE': {
       return pick(RELEASE_SINGLE_MESSAGES).replace('{title}', songTitle || 'the single');
-    }
-
-    case 'POST_CONTENT': {
-      // Check if they went viral (big follower gain)
-      const messages = (fansGained && fansGained > 500)
-        ? POST_CONTENT_MESSAGES.viral
-        : POST_CONTENT_MESSAGES.normal;
-      return pick(messages);
     }
 
     default:

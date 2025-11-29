@@ -22,7 +22,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
   const [bandName, setBandName] = useState(initialBandName);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [talentLevel, setTalentLevel] = useState<TalentLevel>('average');
-  const [preferredStyle, setPreferredStyle] = useState<MusicStyle>('punk');
+  const [preferredStyle, setPreferredStyle] = useState<MusicStyle>('indie');
 
   const handleGenerateBandName = useCallback(() => {
     const rng = createRandom(generateSeed());

@@ -89,6 +89,11 @@ export function checkTriggerConditions(
     if (!hasCustomFlag) return false;
   }
 
+  // Genre/style check
+  if (conditions.preferredStyle !== undefined && state.preferredStyle !== conditions.preferredStyle) {
+    return false;
+  }
+
   return true;
 }
 
