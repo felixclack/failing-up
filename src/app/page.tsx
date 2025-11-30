@@ -14,6 +14,8 @@ import { GigNotificationModal } from '@/components/game/GigNotificationModal';
 import { ManagerHireModal } from '@/components/game/ManagerPanel';
 import { TourSelectionModal } from '@/components/game/TourSelectionModal';
 import { SupportSlotModal } from '@/components/game/SupportSlotModal';
+import { ReleaseSelectionModal } from '@/components/game/ReleaseSelectionModal';
+import { WriteAndRecordStudioModal } from '@/components/game/WriteAndRecordStudioModal';
 import { getTotalFans } from '@/engine/state';
 
 export default function Home() {
@@ -56,6 +58,9 @@ export default function Home() {
     showTourSelection,
     selectTour,
     cancelTourSelection,
+    showReleaseSelection,
+    selectRelease,
+    cancelReleaseSelection,
     pendingSupportSlotOffer,
     acceptSupportSlot,
     declineSupportSlot,
@@ -137,6 +142,16 @@ export default function Home() {
         />
       )}
 
+      {/* Release Selection Modal - show when player wants to release recorded music */}
+      {showReleaseSelection && (
+        <ReleaseSelectionModal
+          albums={gameState.albums}
+          songs={gameState.songs}
+          onConfirm={selectRelease}
+          onCancel={cancelReleaseSelection}
+        />
+      )}
+
       {/* Support Slot Offer Modal - show when a bigger band offers a support slot */}
       {pendingSupportSlotOffer && (
         <SupportSlotModal
@@ -184,8 +199,17 @@ export default function Home() {
         />
       )}
 
+      {/* Write-and-Record Studio Selection Modal */}
+      {pendingNaming && pendingNaming.type === 'write-and-record-studio' && (
+        <WriteAndRecordStudioModal
+          playerMoney={gameState.player.money}
+          onSelectStudio={selectStudio}
+          onCancel={cancelNaming}
+        />
+      )}
+
       {/* Naming Modal - show when player writes a song or records an album */}
-      {pendingNaming && pendingNaming.type !== 'studio-selection' && pendingNaming.type !== 'song-selection' && (
+      {pendingNaming && pendingNaming.type !== 'studio-selection' && pendingNaming.type !== 'song-selection' && pendingNaming.type !== 'write-and-record-studio' && (
         <NamingModal
           pending={pendingNaming}
           onConfirm={confirmNaming}

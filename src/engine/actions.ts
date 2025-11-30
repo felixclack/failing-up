@@ -165,6 +165,22 @@ export const ACTIONS: Record<ActionId, Action> = {
     hasSpecialLogic: true,
   },
 
+  WRITE_AND_RECORD: {
+    id: 'WRITE_AND_RECORD',
+    label: 'Write & Record Album',
+    description: 'Lock yourself in the studio to write and record an album from scratch. Takes 8 weeks.',
+    requirements: {
+      onTour: false,
+      noActiveRecording: true,
+    },
+    baseEffects: {
+      skill: 2,
+      burnout: 3,
+      money: -150, // Initial booking
+    },
+    hasSpecialLogic: true,
+  },
+
   PROMOTE: {
     id: 'PROMOTE',
     label: 'Promote',
@@ -225,13 +241,13 @@ export const ACTIONS: Record<ActionId, Action> = {
   // Streaming Era Actions
   // ==========================================================================
 
-  RELEASE_SINGLE: {
-    id: 'RELEASE_SINGLE',
-    label: 'Release Single',
-    description: 'Drop a single to streaming platforms. Need to write something first.',
+  RELEASE: {
+    id: 'RELEASE',
+    label: 'Release Music',
+    description: 'Drop your recorded music to streaming platforms. Need to record something first.',
     requirements: {
       onTour: false,
-      hasUnreleasedSongs: true, // Need a song to release
+      hasUnreleasedRecordings: true, // Need a recorded album/single to release
     },
     baseEffects: {
       hype: 3,
@@ -302,6 +318,14 @@ export function isActionAvailable(actionId: ActionId, state: GameState): boolean
   if (requirements.minUnreleasedSongs !== undefined) {
     const unreleasedCount = songs.filter(s => !s.isReleased).length;
     if (unreleasedCount < requirements.minUnreleasedSongs) {
+      return false;
+    }
+  }
+
+  // Check for unreleased recordings (albums/singles that haven't been released yet)
+  if (requirements.hasUnreleasedRecordings) {
+    const unreleasedAlbums = state.albums?.filter(a => a.weekReleased === null) ?? [];
+    if (unreleasedAlbums.length === 0) {
       return false;
     }
   }
@@ -456,8 +480,8 @@ export function executeAction(
     case 'WRITE':
       return executeWrite(state, rng);
 
-    case 'RELEASE_SINGLE':
-      return executeReleaseSingle(state, rng);
+    case 'RELEASE':
+      return executeRelease(state, rng);
 
     case 'PROMOTE':
       return executePromote(state, rng);
@@ -562,50 +586,28 @@ function executePromote(state: GameState, rng: RandomGenerator): ActionResult {
 // =============================================================================
 
 /**
- * Execute RELEASE_SINGLE action
+ * Execute RELEASE action - releases a recorded album/single to streaming
+ * This is handled in useGame.ts via a release selection modal
+ * The action itself just validates that there's something to release
  */
-function executeReleaseSingle(state: GameState, rng: RandomGenerator): ActionResult {
-  // Find unreleased songs
-  const unreleasedSongs = state.songs.filter(s => !s.isReleased);
+function executeRelease(state: GameState, rng: RandomGenerator): ActionResult {
+  // Find unreleased albums (recordings that haven't been published yet)
+  const unreleasedAlbums = state.albums.filter(a => a.weekReleased === null);
 
-  if (unreleasedSongs.length === 0) {
+  if (unreleasedAlbums.length === 0) {
     return {
       success: false,
-      message: 'No unreleased songs to drop as a single.',
+      message: 'No recorded music to release. Record something first.',
       statChanges: {},
     };
   }
 
-  // Pick the best unreleased song (by hit potential)
-  const sortedSongs = [...unreleasedSongs].sort((a, b) => b.hitPotential - a.hitPotential);
-  const song = sortedSongs[0];
-
-  // Calculate release tier based on player's digital presence
-  const baseScore = (song.quality + song.hitPotential) / 2;
-  const digitalBoost = (state.player.algoBoost + state.player.followers / 10000) / 2;
-  const totalScore = baseScore + digitalBoost + rng.nextInt(-10, 10);
-
-  let tierName: string;
-  if (totalScore >= 80) tierName = 'massive buzz';
-  else if (totalScore >= 60) tierName = 'strong start';
-  else if (totalScore >= 40) tierName = 'steady streams';
-  else tierName = 'quiet release';
-
-  // Stat gains scale with release quality
-  const hypeGain = Math.floor(3 + totalScore / 20);
-  const algoBoostGain = Math.floor(2 + totalScore / 30);
-  const casualListenersGain = Math.floor(totalScore * 5);
-
+  // This is a placeholder - the actual release logic happens in useGame.ts
+  // after the player selects which album to release
   return {
     success: true,
-    message: `Dropped "${song.title}" as a single - ${tierName}!`,
-    statChanges: {
-      ...ACTIONS.RELEASE_SINGLE.baseEffects,
-      hype: hypeGain,
-      algoBoost: algoBoostGain,
-      casualListeners: casualListenersGain,
-    },
-    releasedSongId: song.id, // Signal to update song's release status
+    message: 'Ready to release music.',
+    statChanges: ACTIONS.RELEASE.baseEffects,
   };
 }
 

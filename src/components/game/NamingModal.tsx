@@ -14,7 +14,7 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
   const [useCustom, setUseCustom] = useState(false);
 
   // Don't render for studio or song selection - those are handled separately
-  if (pending.type === 'studio-selection' || pending.type === 'song-selection') {
+  if (pending.type === 'studio-selection' || pending.type === 'song-selection' || pending.type === 'write-and-record-studio') {
     return null;
   }
 
@@ -35,6 +35,9 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
       typeLabel = 'Album';
       icon = '📀';
     }
+  } else if (pending.type === 'write-and-record') {
+    typeLabel = 'Album';
+    icon = '📀';
   } else if (pending.type === 'song') {
     typeLabel = 'Song';
     icon = '🎵';
@@ -76,6 +79,11 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
           {pending.type === 'album' && (
             <p className="text-gray-400 text-sm">
               {pending.songIds.length} tracks
+            </p>
+          )}
+          {pending.type === 'write-and-record' && (
+            <p className="text-gray-400 text-sm">
+              8 weeks to write and record from scratch
             </p>
           )}
         </div>
@@ -144,7 +152,7 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
             className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600
                        disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
           >
-            {isSong ? 'Save Song' : `Record ${typeLabel}`}
+            {isSong ? 'Save Song' : pending.type === 'write-and-record' ? 'Start Session' : `Record ${typeLabel}`}
           </button>
         </div>
       </div>

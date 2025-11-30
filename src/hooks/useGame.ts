@@ -106,6 +106,11 @@ export interface UseGameReturn {
   selectTour: (tourType: TourType) => void;
   cancelTourSelection: () => void;
 
+  // Release selection
+  showReleaseSelection: boolean;
+  selectRelease: (albumId: string) => void;
+  cancelReleaseSelection: () => void;
+
   // Support slot offers
   pendingSupportSlotOffer: SupportSlotOffer | null;
   acceptSupportSlot: () => void;
@@ -147,6 +152,9 @@ export function useGame(): UseGameReturn {
 
   // Tour selection state
   const [showTourSelection, setShowTourSelection] = useState(false);
+
+  // Release selection state
+  const [showReleaseSelection, setShowReleaseSelection] = useState(false);
 
   // Check for pending gig decision at START of week (before action)
   useEffect(() => {
@@ -270,6 +278,20 @@ export function useGame(): UseGameReturn {
       return;
     }
 
+    // Handle RELEASE action - show release selection modal
+    if (actionId === 'RELEASE') {
+      setShowReleaseSelection(true);
+      return;
+    }
+
+    // Handle WRITE_AND_RECORD - show studio selection directly (no songs to select)
+    if (actionId === 'WRITE_AND_RECORD') {
+      setPendingNaming({
+        type: 'write-and-record-studio',
+      });
+      return;
+    }
+
     // Handle all RECORD actions - show song selection first
     if (actionId === 'RECORD_SINGLE' || actionId === 'RECORD_EP' || actionId === 'RECORD_ALBUM') {
       // Show song selection modal first
@@ -288,25 +310,70 @@ export function useGame(): UseGameReturn {
       const studioOption = STUDIO_OPTIONS.find(s => s.id === session.studioQuality) || STUDIO_OPTIONS[0];
       const newWeeksRemaining = session.weeksRemaining - 1;
       const newProductionProgress = Math.min(100, session.productionProgress + (100 / session.weeksTotal));
+      const rng = createRandom(gameState.seed + gameState.week);
+
+      // Track new songs created this week (for write-and-record)
+      let newSongs: Song[] = [];
+      let updatedSongIds = [...session.songIds];
+      let songsWrittenThisWeek = 0;
+      let updatedSongsWritten = session.songsWritten || 0;
+
+      // Write-and-record: create songs during the session
+      if (session.isWriteAndRecord && session.songsToWrite) {
+        // Write 1-2 songs per week
+        const songsRemaining = session.songsToWrite - updatedSongsWritten;
+        const weeksLeft = newWeeksRemaining + 1; // Including this week
+        const songsNeededPerWeek = Math.ceil(songsRemaining / weeksLeft);
+        songsWrittenThisWeek = Math.min(songsRemaining, Math.max(1, songsNeededPerWeek + (rng.next() < 0.3 ? 1 : 0)));
+
+        for (let i = 0; i < songsWrittenThisWeek; i++) {
+          const baseQuality = Math.floor((gameState.player.talent + gameState.player.skill) / 2);
+          const qualityVariance = rng.nextInt(-10, 15);
+          const quality = Math.max(0, Math.min(100, baseQuality + qualityVariance));
+          const hitPotential = Math.max(0, Math.min(100, Math.floor(quality * 0.7 + rng.nextInt(0, 30))));
+
+          const song: Song = {
+            id: `song_${gameState.week}_${rng.nextInt(0, 9999)}_${i}`,
+            title: generateSongTitle(rng),
+            quality,
+            style: gameState.preferredStyle,
+            hitPotential,
+            writtenByPlayer: true,
+            weekWritten: gameState.week,
+            isReleased: false,
+            isSingle: false,
+            weekReleased: null,
+            streamsTier: 'none',
+            playlistScore: 0,
+            viralFlag: false,
+            viralWeeksRemaining: 0,
+            totalStreams: 0,
+          };
+
+          newSongs.push(song);
+          updatedSongIds.push(song.id);
+        }
+        updatedSongsWritten += songsWrittenThisWeek;
+      }
 
       // Check if recording is complete
       if (newWeeksRemaining <= 0) {
         // Recording complete - create the album
-        const rng = createRandom(gameState.seed + gameState.week);
         const newAlbum = {
           id: `album_${gameState.week}_${rng.nextInt(0, 9999)}`,
           title: session.title,
-          songIds: session.songIds,
+          songIds: updatedSongIds,
           productionValue: Math.floor(newProductionProgress) + Math.floor(gameState.player.skill / 4) + studioOption.qualityBonus,
           promotionSpend: 0,
           reception: null,
           salesTier: null,
           labelId: gameState.labelDeals.find(d => d.status === 'active')?.id || null,
-          weekReleased: gameState.week,
+          weekReleased: null,  // Not released yet - needs RELEASE action
         };
 
         const newState: GameState = {
           ...gameState,
+          songs: [...gameState.songs, ...newSongs],
           albums: [...gameState.albums, newAlbum],
           recordingSession: null,
           player: {
@@ -321,10 +388,11 @@ export function useGame(): UseGameReturn {
         };
 
         const label = session.type === 'ep' ? 'EP' : 'album';
+        const writeNote = session.isWriteAndRecord ? ' Written and recorded from scratch.' : '';
         setGameState(newState);
         setLastTurnResult({
           newState,
-          actionResult: `You finished recording "${session.title}" - a ${label} with ${session.songIds.length} tracks. Time to let the world hear it.`,
+          actionResult: `You finished recording "${session.title}" - a ${label} with ${updatedSongIds.length} tracks.${writeNote} Ready to release when you are.`,
           triggeredEvents: [],
           isGameOver: false,
           gameOverReason: null,
@@ -335,10 +403,13 @@ export function useGame(): UseGameReturn {
       // Recording continues
       const newState: GameState = {
         ...gameState,
+        songs: [...gameState.songs, ...newSongs],
         recordingSession: {
           ...session,
           weeksRemaining: newWeeksRemaining,
           productionProgress: newProductionProgress,
+          songIds: updatedSongIds,
+          songsWritten: updatedSongsWritten,
         },
         player: {
           ...gameState.player,
@@ -350,10 +421,15 @@ export function useGame(): UseGameReturn {
         year: Math.floor(gameState.week / 52) + 1,
       };
 
+      let actionMessage = `Another week in the studio working on "${session.title}". ${newWeeksRemaining} week${newWeeksRemaining > 1 ? 's' : ''} to go. Production at ${Math.floor(newProductionProgress)}%.`;
+      if (session.isWriteAndRecord && songsWrittenThisWeek > 0) {
+        actionMessage = `Wrote ${songsWrittenThisWeek} new track${songsWrittenThisWeek > 1 ? 's' : ''} for "${session.title}". ${updatedSongsWritten}/${session.songsToWrite} songs done. ${newWeeksRemaining} week${newWeeksRemaining > 1 ? 's' : ''} left.`;
+      }
+
       setGameState(newState);
       setLastTurnResult({
         newState,
-        actionResult: `Another week in the studio working on "${session.title}". ${newWeeksRemaining} week${newWeeksRemaining > 1 ? 's' : ''} to go. Production at ${Math.floor(newProductionProgress)}%.`,
+        actionResult: actionMessage,
         triggeredEvents: [],
         isGameOver: false,
         gameOverReason: null,
@@ -728,6 +804,88 @@ export function useGame(): UseGameReturn {
     setShowTourSelection(false);
   }, []);
 
+  // Release selection handlers
+  const selectRelease = useCallback((albumId: string) => {
+    if (!gameState) return;
+
+    const album = gameState.albums.find(a => a.id === albumId);
+    if (!album || album.weekReleased !== null) return;
+
+    const rng = createRandom(gameState.seed + gameState.week + 9000);
+
+    // Calculate release impact based on album quality and player stats
+    const albumSongs = gameState.songs.filter(s => album.songIds.includes(s.id));
+    const avgQuality = albumSongs.length > 0
+      ? albumSongs.reduce((sum, s) => sum + s.quality, 0) / albumSongs.length
+      : 50;
+
+    const baseScore = (avgQuality + album.productionValue) / 2;
+    const digitalBoost = (gameState.player.algoBoost + gameState.player.followers / 10000) / 2;
+    const totalScore = baseScore + digitalBoost + rng.nextInt(-10, 10);
+
+    // Determine release tier and message
+    let tierName: string;
+    if (totalScore >= 80) tierName = 'massive buzz';
+    else if (totalScore >= 60) tierName = 'strong start';
+    else if (totalScore >= 40) tierName = 'steady streams';
+    else tierName = 'quiet release';
+
+    // Stat gains scale with release quality and number of tracks
+    const trackMultiplier = Math.sqrt(album.songIds.length);
+    const hypeGain = Math.floor((3 + totalScore / 20) * trackMultiplier);
+    const algoBoostGain = Math.floor((2 + totalScore / 30) * trackMultiplier);
+    const casualListenersGain = Math.floor(totalScore * 5 * trackMultiplier);
+    const coreFansGain = Math.floor(totalScore / 5 * trackMultiplier);
+
+    // Mark album as released
+    const updatedAlbums = gameState.albums.map(a =>
+      a.id === albumId ? { ...a, weekReleased: gameState.week } : a
+    );
+
+    // Mark songs as released
+    const updatedSongs = gameState.songs.map(s =>
+      album.songIds.includes(s.id)
+        ? { ...s, isReleased: true, weekReleased: gameState.week, isSingle: album.songIds.length === 1 }
+        : s
+    );
+
+    // Determine release type label
+    const trackCount = album.songIds.length;
+    let typeLabel = 'album';
+    if (trackCount === 1) typeLabel = 'single';
+    else if (trackCount <= 6) typeLabel = 'EP';
+
+    const newState: GameState = {
+      ...gameState,
+      albums: updatedAlbums,
+      songs: updatedSongs,
+      player: {
+        ...gameState.player,
+        hype: Math.min(100, gameState.player.hype + hypeGain),
+        algoBoost: Math.min(100, gameState.player.algoBoost + algoBoostGain),
+        casualListeners: gameState.player.casualListeners + casualListenersGain,
+        coreFans: gameState.player.coreFans + coreFansGain,
+        burnout: Math.min(100, gameState.player.burnout + 1),
+      },
+      week: gameState.week + 1,
+      year: Math.floor(gameState.week / 52) + 1,
+    };
+
+    setGameState(newState);
+    setShowReleaseSelection(false);
+    setLastTurnResult({
+      newState,
+      actionResult: `You dropped "${album.title}" - ${tierName}! The ${typeLabel} is out there now.`,
+      triggeredEvents: [],
+      isGameOver: false,
+      gameOverReason: null,
+    });
+  }, [gameState]);
+
+  const cancelReleaseSelection = useCallback(() => {
+    setShowReleaseSelection(false);
+  }, []);
+
   // Support slot offer handlers
   const acceptSupportSlot = useCallback(() => {
     if (!gameState || !gameState.pendingSupportSlotOffer) return;
@@ -757,7 +915,21 @@ export function useGame(): UseGameReturn {
 
   // Studio selection handler
   const selectStudio = useCallback((studioQuality: StudioQuality) => {
-    if (!pendingNaming || pendingNaming.type !== 'studio-selection' || !gameState) return;
+    if (!pendingNaming || !gameState) return;
+
+    // Handle write-and-record studio selection
+    if (pendingNaming.type === 'write-and-record-studio') {
+      const rng = createRandom(gameState.seed + gameState.week + 1000);
+      const generatedTitle = generateAlbumTitle(rng);
+      setPendingNaming({
+        type: 'write-and-record',
+        generatedTitle,
+        studioQuality,
+      });
+      return;
+    }
+
+    if (pendingNaming.type !== 'studio-selection') return;
 
     const rng = createRandom(gameState.seed + gameState.week + 1000);
     const generatedTitle = generateAlbumTitle(rng);
@@ -789,6 +961,7 @@ export function useGame(): UseGameReturn {
     // Song and studio selection are handled separately
     if (pendingNaming.type === 'studio-selection') return;
     if (pendingNaming.type === 'song-selection') return;
+    if (pendingNaming.type === 'write-and-record-studio') return;
 
     const finalName = customName || pendingNaming.generatedTitle;
 
@@ -840,7 +1013,7 @@ export function useGame(): UseGameReturn {
         reception: null,
         salesTier: null,
         labelId: gameState.labelDeals.find(d => d.status === 'active')?.id || null,
-        weekReleased: gameState.week,
+        weekReleased: null,  // Not released yet - needs RELEASE action
       };
 
       const studioCost = studioOption.costPerWeek;
@@ -861,7 +1034,7 @@ export function useGame(): UseGameReturn {
       setGameState(newState);
       setLastTurnResult({
         newState,
-        actionResult: `You recorded "${finalName}" ${studioLabel}. One track, done in a week.`,
+        actionResult: `You recorded "${finalName}" ${studioLabel}. One track in the can. Ready to drop whenever.`,
         triggeredEvents: [],
         isGameOver: false,
         gameOverReason: null,
@@ -897,6 +1070,44 @@ export function useGame(): UseGameReturn {
       setLastTurnResult({
         newState,
         actionResult: `You've booked ${weeksTotal} weeks to record "${finalName}" at ${studioLabel}. Time to make some noise.`,
+        triggeredEvents: [],
+        isGameOver: false,
+        gameOverReason: null,
+      });
+    } else if (pendingNaming.type === 'write-and-record') {
+      // Write-and-record: 8-week session to write and record an album from scratch
+      const studioOption = STUDIO_OPTIONS.find(s => s.id === pendingNaming.studioQuality) || STUDIO_OPTIONS[0];
+      const weeksTotal = 8;
+      const songsToWrite = 10;
+
+      const session: RecordingSession = {
+        type: 'album',
+        title: finalName,
+        songIds: [],  // Songs will be created during the session
+        weeksRemaining: weeksTotal,
+        weeksTotal,
+        productionProgress: 0,
+        studioQuality: studioOption.id,
+        costPerWeek: studioOption.costPerWeek,
+        isWriteAndRecord: true,
+        songsToWrite,
+        songsWritten: 0,
+      };
+
+      const newState: GameState = {
+        ...gameState,
+        recordingSession: session,
+        player: {
+          ...gameState.player,
+          flags: { ...gameState.player.flags, inStudio: true },
+        },
+      };
+
+      const studioLabel = studioOption.id === 'bedroom' ? 'your bedroom setup' : studioOption.label;
+      setGameState(newState);
+      setLastTurnResult({
+        newState,
+        actionResult: `You've locked yourself in ${studioLabel} for ${weeksTotal} weeks. Time to write and record "${finalName}" from scratch.`,
         triggeredEvents: [],
         isGameOver: false,
         gameOverReason: null,
@@ -1023,6 +1234,9 @@ export function useGame(): UseGameReturn {
     showTourSelection,
     selectTour,
     cancelTourSelection,
+    showReleaseSelection,
+    selectRelease,
+    cancelReleaseSelection,
     pendingSupportSlotOffer: gameState?.pendingSupportSlotOffer || null,
     acceptSupportSlot,
     declineSupportSlot,

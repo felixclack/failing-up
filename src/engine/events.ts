@@ -94,11 +94,13 @@ export function checkTriggerConditions(
     return false;
   }
 
-  // Gig check - only trigger if a gig happened this week
+  // Gig check - only trigger if a gig is happening/happened this week
   if (conditions.hadGigThisWeek !== undefined) {
-    const hadGig = state.lastGigResult !== null &&
-                   state.lastGigResult.gig.week === state.week - 1; // Gig was resolved last turn
-    if (conditions.hadGigThisWeek !== hadGig) return false;
+    // Check if there's an accepted gig scheduled for this week (gig will happen this turn)
+    const gigThisWeek = state.upcomingGig !== null &&
+                        state.upcomingGig.week === state.week &&
+                        state.upcomingGig.accepted === true;
+    if (conditions.hadGigThisWeek !== gigThisWeek) return false;
   }
 
   // Album checks

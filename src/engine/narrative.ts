@@ -201,10 +201,10 @@ const SIDE_JOB_MESSAGES = [
   'Another week of pretending this isn\'t your real life. The music is your real life. This is just... waiting.',
 ];
 
-const RELEASE_SINGLE_MESSAGES = [
+const RELEASE_MESSAGES = [
   '"{title}" is out there now. Floating in the digital void. Waiting to be found. Or forgotten.',
   'Hit publish. Deep breath. "{title}" belongs to the world now. No taking it back.',
-  'The single drops at midnight. You refresh the streaming numbers like it\'s a slot machine. It kind of is.',
+  'The release drops at midnight. You refresh the streaming numbers like it\'s a slot machine. It kind of is.',
   'Released "{title}" to the algorithms. May the robots be merciful.',
   '"{title}" is live. Now comes the waiting. The refreshing. The hoping.',
 ];
@@ -484,8 +484,8 @@ export function getActionMessage(context: NarrativeContext): string {
     case 'SIDE_JOB':
       return pick(SIDE_JOB_MESSAGES);
 
-    case 'RELEASE_SINGLE': {
-      return pick(RELEASE_SINGLE_MESSAGES).replace('{title}', songTitle || 'the single');
+    case 'RELEASE': {
+      return pick(RELEASE_MESSAGES).replace('{title}', songTitle || 'the release');
     }
 
     default:

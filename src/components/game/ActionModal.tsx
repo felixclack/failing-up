@@ -184,10 +184,11 @@ function getActionCategory(actionId: ActionId): 'creative' | 'perform' | 'busine
     case 'RECORD_EP':
     case 'RECORD_ALBUM':
     case 'STUDIO_WORK':
+    case 'WRITE_AND_RECORD':
     case 'REHEARSE':
       return 'creative';
     case 'TOUR':
-    case 'RELEASE_SINGLE':
+    case 'RELEASE':
       return 'perform';
     case 'PROMOTE':
     case 'NETWORK':

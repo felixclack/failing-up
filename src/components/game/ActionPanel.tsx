@@ -11,7 +11,7 @@ interface ActionPanelProps {
 
 // Action categories for organization
 const ACTION_CATEGORIES: Record<string, ActionId[]> = {
-  'Music': ['WRITE', 'REHEARSE', 'RECORD_SINGLE', 'RECORD_EP', 'RECORD_ALBUM', 'STUDIO_WORK', 'RELEASE_SINGLE'],
+  'Music': ['WRITE', 'REHEARSE', 'RECORD_SINGLE', 'RECORD_EP', 'RECORD_ALBUM', 'WRITE_AND_RECORD', 'STUDIO_WORK', 'RELEASE'],
   'Career': ['TOUR', 'PROMOTE', 'NETWORK'],
   'Lifestyle': ['PARTY', 'REST', 'SIDE_JOB'],
 };

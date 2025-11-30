@@ -14,7 +14,7 @@ const ACTION_GROUPS: { label: string; icon: string; actions: ActionId[] }[] = [
   {
     label: 'Music',
     icon: '🎸',
-    actions: ['WRITE', 'REHEARSE', 'RECORD_SINGLE', 'RECORD_EP', 'RECORD_ALBUM', 'STUDIO_WORK', 'RELEASE_SINGLE'],
+    actions: ['WRITE', 'REHEARSE', 'RECORD_SINGLE', 'RECORD_EP', 'RECORD_ALBUM', 'WRITE_AND_RECORD', 'STUDIO_WORK', 'RELEASE'],
   },
   {
     label: 'Career',

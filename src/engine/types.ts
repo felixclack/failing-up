@@ -35,12 +35,13 @@ export type ActionId =
   | 'RECORD_EP'
   | 'RECORD_ALBUM'
   | 'STUDIO_WORK'  // Continue an active recording session
+  | 'WRITE_AND_RECORD'  // Extended session: write and record an album from scratch
   | 'PROMOTE'
   | 'NETWORK'
   | 'PARTY'
   | 'SIDE_JOB'
   // Streaming era actions
-  | 'RELEASE_SINGLE';
+  | 'RELEASE';     // Release a recorded single/EP/album
 
 export type GameOverReason =
   | 'death'
@@ -344,6 +345,8 @@ export interface ActionRequirements {
   hasReleasedMusic?: boolean;    // Has at least one released song or album
   minSongs?: number;             // Minimum total songs written
   minUnreleasedSongs?: number;   // Minimum unreleased songs needed
+  // Album-related requirements
+  hasUnreleasedRecordings?: boolean; // Has albums/singles that haven't been released
   // Recording session requirements
   hasActiveRecording?: boolean;  // Must have an active recording session
   noActiveRecording?: boolean;   // Cannot have an active recording session
@@ -547,6 +550,10 @@ export interface RecordingSession {
   productionProgress: number;  // 0-100, quality builds over time
   studioQuality: StudioQuality;
   costPerWeek: number;
+  // Write-and-record specific fields
+  isWriteAndRecord?: boolean;  // If true, songs are being written during session
+  songsToWrite?: number;       // How many songs to write during session
+  songsWritten?: number;       // How many have been written so far
 }
 
 // Tour type matches economy.ts TourType
@@ -695,7 +702,19 @@ export interface PendingSongSelection {
   recordAction: 'RECORD_SINGLE' | 'RECORD_EP' | 'RECORD_ALBUM';
 }
 
-export type PendingNaming = PendingSongNaming | PendingSingleNaming | PendingAlbumNaming | PendingStudioSelection | PendingSongSelection;
+// Write-and-record studio selection (goes straight to studio, then naming)
+export interface PendingWriteAndRecordStudioSelection {
+  type: 'write-and-record-studio';
+}
+
+// Write-and-record naming (after studio selection)
+export interface PendingWriteAndRecordNaming {
+  type: 'write-and-record';
+  generatedTitle: string;
+  studioQuality: StudioQuality;
+}
+
+export type PendingNaming = PendingSongNaming | PendingSingleNaming | PendingAlbumNaming | PendingStudioSelection | PendingSongSelection | PendingWriteAndRecordStudioSelection | PendingWriteAndRecordNaming;
 
 // =============================================================================
 // Endings
