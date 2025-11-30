@@ -13,6 +13,7 @@ import {
   Difficulty,
   TalentLevel,
   MusicStyle,
+  Manager,
 } from './types';
 import { createRandom, generateSeed, RandomGenerator } from './random';
 import { getDifficultySettings, getWeeklyLivingCost } from './difficulty';
@@ -344,6 +345,42 @@ export function createStartingBand(rng: RandomGenerator): Bandmate[] {
   return roles.map(role => createBandmate(role, rng));
 }
 
+// Manager names for starting manager
+const MANAGER_FIRST_NAMES = [
+  'Tony', 'Pete', 'Dave', 'Mick', 'Steve', 'Gary', 'Paul', 'John',
+  'Graham', 'Keith', 'Brian', 'Terry', 'Barry', 'Colin', 'Derek',
+  'Sharon', 'Carol', 'Linda', 'Karen', 'Tina',
+];
+
+const MANAGER_LAST_NAMES = [
+  'Smith', 'Jones', 'Wilson', 'Brown', 'Taylor', 'Davies', 'Evans',
+  'Thomas', 'Roberts', 'Walker', 'Wright', 'Robinson', 'Thompson',
+  'Mills', 'King', 'Baker', 'Price', 'Stone', 'Fox', 'Sharp',
+];
+
+/**
+ * Create a starting manager for new bands
+ * Starting managers are modest - they're willing to take a chance on a new band
+ * but don't have amazing connections or booking skills yet
+ */
+export function createStartingManager(rng: RandomGenerator): Manager {
+  const first = MANAGER_FIRST_NAMES[rng.nextInt(0, MANAGER_FIRST_NAMES.length - 1)];
+  const last = MANAGER_LAST_NAMES[rng.nextInt(0, MANAGER_LAST_NAMES.length - 1)];
+
+  return {
+    id: `manager_${Date.now()}_${rng.nextInt(0, 9999)}`,
+    name: `${first} ${last}`,
+    // Modest starting stats - they're taking a chance on a new band
+    bookingSkill: rng.nextInt(25, 40),
+    connections: rng.nextInt(20, 35),
+    reliability: rng.nextInt(50, 70),
+    cut: 0.12, // 12% cut - modest for a starting manager
+    reputation: rng.nextInt(15, 30),
+    status: 'active',
+    weekHired: 1,
+  };
+}
+
 export interface CreateGameOptions {
   playerName: string;
   bandName?: string;
@@ -370,7 +407,7 @@ export function createGameState(options: CreateGameOptions): GameState {
     talent = getTalentFromLevel(options.talentLevel);
   }
 
-  const player = createPlayer({
+  const basePlayer = createPlayer({
     name: options.playerName,
     talent,
   }, rng, difficultySettings);
@@ -383,6 +420,18 @@ export function createGameState(options: CreateGameOptions): GameState {
   // Generate starting rival bands
   const rivalBands = generateStartingRivals(rng);
 
+  // Create starting manager - every new band gets a modest manager to start
+  const startingManager = createStartingManager(rng);
+
+  // Update player flags to reflect having a starting manager
+  const player: Player = {
+    ...basePlayer,
+    flags: {
+      ...basePlayer.flags,
+      hasManager: true,
+    },
+  };
+
   return {
     player,
     bandName,
@@ -392,7 +441,7 @@ export function createGameState(options: CreateGameOptions): GameState {
     labelDeals: [],
 
     // Manager and gig system
-    manager: null,
+    manager: startingManager,
     upcomingGig: null,
     lastGigResult: null,
     pendingSupportSlotOffer: null,
