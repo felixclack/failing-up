@@ -408,6 +408,9 @@ export interface EventTriggerConditions {
   hasFlag?: string;
   // Gig requirements
   hadGigThisWeek?: boolean;  // Only trigger if a gig happened this week
+  // Album requirements
+  minReleasedAlbums?: number;
+  releasedAlbumRecently?: boolean;  // Released an album in the last few weeks
   // Genre requirements
   preferredStyle?: MusicStyle;
 }

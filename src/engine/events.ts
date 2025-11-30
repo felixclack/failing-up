@@ -101,6 +101,19 @@ export function checkTriggerConditions(
     if (conditions.hadGigThisWeek !== hadGig) return false;
   }
 
+  // Album checks
+  const releasedAlbums = state.albums.filter(a => a.weekReleased !== null);
+  if (conditions.minReleasedAlbums !== undefined && releasedAlbums.length < conditions.minReleasedAlbums) {
+    return false;
+  }
+  if (conditions.releasedAlbumRecently !== undefined) {
+    // Check if an album was released in the last 4 weeks
+    const recentAlbum = releasedAlbums.some(a =>
+      a.weekReleased !== null && state.week - a.weekReleased <= 4
+    );
+    if (conditions.releasedAlbumRecently !== recentAlbum) return false;
+  }
+
   return true;
 }
 
