@@ -12,6 +12,7 @@ import { streamingEvents } from './streamingEvents';
 import { genreEvents } from './genreEvents';
 import { ALL_RIVALRY_EVENTS } from './rivalryEvents';
 import { albumEvents } from './albumEvents';
+import { festivalEvents } from './festivalEvents';
 
 // =============================================================================
 // Band Conflict Events
@@ -965,6 +966,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...streamingEvents,
   ...genreEvents,
   ...albumEvents,
+  ...festivalEvents,
   ...ALL_ARC_EVENTS,
   ...ALL_ADDITIONAL_EVENTS,
   ...ALL_RIVALRY_EVENTS,
