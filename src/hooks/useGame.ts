@@ -47,6 +47,28 @@ export const STUDIO_OPTIONS: StudioOption[] = [
   },
 ];
 
+// Save data structure
+export interface SaveData {
+  version: number;
+  timestamp: number;
+  gameState: GameState;
+  lastOptions: CreateGameOptions | null;
+  temptationCooldowns: Record<string, number>;
+}
+
+const SAVE_VERSION = 1;
+const SAVE_KEY = 'failing-up-save';
+const SAVE_SLOTS_KEY = 'failing-up-save-slots';
+
+export interface SaveSlot {
+  id: string;
+  name: string;
+  timestamp: number;
+  bandName: string;
+  week: number;
+  year: number;
+}
+
 export interface UseGameReturn {
   // State
   gameState: GameState | null;
@@ -76,6 +98,10 @@ export interface UseGameReturn {
   showManagerHiring: boolean;
   managerCandidates: Manager[];
 
+  // Save/Load state
+  saveSlots: SaveSlot[];
+  hasSavedGame: boolean;
+
   // Actions
   startGame: (options: CreateGameOptions) => void;
   takeAction: (actionId: ActionId) => void;
@@ -90,6 +116,12 @@ export interface UseGameReturn {
   selectStudio: (studioQuality: StudioQuality) => void;
   confirmNaming: (customName: string | null) => void;
   cancelNaming: () => void;
+
+  // Save/Load actions
+  saveGame: (slotId?: string) => boolean;
+  loadGame: (slotId?: string) => boolean;
+  deleteSave: (slotId: string) => void;
+  getSaveSlots: () => SaveSlot[];
 
   // Manager actions
   openManagerHiring: () => void;
@@ -156,6 +188,9 @@ export function useGame(): UseGameReturn {
 
   // Release selection state
   const [showReleaseSelection, setShowReleaseSelection] = useState(false);
+
+  // Save slots state
+  const [saveSlots, setSaveSlots] = useState<SaveSlot[]>([]);
 
   // Check for pending gig decision at START of week (before action)
   useEffect(() => {
@@ -1197,6 +1232,149 @@ export function useGame(): UseGameReturn {
     return lastTurnResult.weekReflection || null;
   }, [lastTurnResult]);
 
+  // Load save slots on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const slotsJson = localStorage.getItem(SAVE_SLOTS_KEY);
+      if (slotsJson) {
+        setSaveSlots(JSON.parse(slotsJson));
+      }
+    } catch (e) {
+      console.error('Failed to load save slots:', e);
+    }
+  }, []);
+
+  // Check if there's a saved game (quick save or any slot)
+  const hasSavedGame = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(SAVE_KEY) !== null || saveSlots.length > 0;
+  }, [saveSlots]);
+
+  // Get all save slots
+  const getSaveSlots = useCallback((): SaveSlot[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const slotsJson = localStorage.getItem(SAVE_SLOTS_KEY);
+      return slotsJson ? JSON.parse(slotsJson) : [];
+    } catch (e) {
+      console.error('Failed to get save slots:', e);
+      return [];
+    }
+  }, []);
+
+  // Save game to a slot (or quick save if no slotId)
+  const saveGame = useCallback((slotId?: string): boolean => {
+    if (!gameState || typeof window === 'undefined') return false;
+
+    try {
+      const saveData: SaveData = {
+        version: SAVE_VERSION,
+        timestamp: Date.now(),
+        gameState,
+        lastOptions,
+        temptationCooldowns,
+      };
+
+      const saveKey = slotId ? `${SAVE_KEY}-${slotId}` : SAVE_KEY;
+      localStorage.setItem(saveKey, JSON.stringify(saveData));
+
+      // Update save slots registry
+      if (slotId) {
+        const slots = getSaveSlots();
+        const existingIndex = slots.findIndex(s => s.id === slotId);
+        const slotInfo: SaveSlot = {
+          id: slotId,
+          name: `Slot ${slotId}`,
+          timestamp: Date.now(),
+          bandName: gameState.bandName,
+          week: gameState.week,
+          year: gameState.year,
+        };
+
+        if (existingIndex >= 0) {
+          slots[existingIndex] = slotInfo;
+        } else {
+          slots.push(slotInfo);
+        }
+
+        localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(slots));
+        setSaveSlots(slots);
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Failed to save game:', e);
+      return false;
+    }
+  }, [gameState, lastOptions, temptationCooldowns, getSaveSlots]);
+
+  // Load game from a slot (or quick save if no slotId)
+  const loadGame = useCallback((slotId?: string): boolean => {
+    if (typeof window === 'undefined') return false;
+
+    try {
+      const saveKey = slotId ? `${SAVE_KEY}-${slotId}` : SAVE_KEY;
+      const saveJson = localStorage.getItem(saveKey);
+
+      if (!saveJson) {
+        console.error('No save data found');
+        return false;
+      }
+
+      const saveData: SaveData = JSON.parse(saveJson);
+
+      // Version check - could add migration logic here
+      if (saveData.version !== SAVE_VERSION) {
+        console.warn('Save version mismatch, attempting to load anyway');
+      }
+
+      // Restore state
+      setGameState(saveData.gameState);
+      setLastOptions(saveData.lastOptions);
+      setTemptationCooldowns(saveData.temptationCooldowns);
+
+      // Clear transient state
+      setLastTurnResult(null);
+      setPendingEvent(null);
+      setEventOutcome(null);
+      setPendingEventState(null);
+      setPendingNaming(null);
+      setPendingNamingTurnResult(null);
+      setPendingTemptation(null);
+      setTemptationOutcome(null);
+      setPendingGigResult(null);
+      setPendingGigDecision(null);
+      setShowManagerHiring(false);
+      setManagerCandidates([]);
+      setShowTourSelection(false);
+      setShowReleaseSelection(false);
+
+      return true;
+    } catch (e) {
+      console.error('Failed to load game:', e);
+      return false;
+    }
+  }, []);
+
+  // Delete a save slot
+  const deleteSave = useCallback((slotId: string) => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      // Remove the save data
+      const saveKey = `${SAVE_KEY}-${slotId}`;
+      localStorage.removeItem(saveKey);
+
+      // Update slots registry
+      const slots = getSaveSlots().filter(s => s.id !== slotId);
+      localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(slots));
+      setSaveSlots(slots);
+    } catch (e) {
+      console.error('Failed to delete save:', e);
+    }
+  }, [getSaveSlots]);
+
   return {
     gameState,
     isStarted: gameState !== null,
@@ -1243,5 +1421,12 @@ export function useGame(): UseGameReturn {
     declineSupportSlot,
     availableActions,
     currentWeekLog,
+    // Save/Load
+    saveSlots,
+    hasSavedGame,
+    saveGame,
+    loadGame,
+    deleteSave,
+    getSaveSlots,
   };
 }

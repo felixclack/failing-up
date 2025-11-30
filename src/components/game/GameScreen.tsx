@@ -8,6 +8,8 @@ import { WeekFeed } from './WeekFeed';
 import { ActionModal } from './ActionModal';
 import { ManagerPanel } from './ManagerPanel';
 import { StreamingStatsPanel, CompactStreamingStats } from './StreamingStatsPanel';
+import { SaveLoadModal } from './SaveLoadModal';
+import { SaveSlot } from '@/hooks/useGame';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -19,6 +21,12 @@ interface GameScreenProps {
   onFireBandmate?: (bandmateId: string) => void;
   onHireManager?: () => void;
   onFireManager?: () => void;
+  // Save/Load
+  saveSlots?: SaveSlot[];
+  onSaveGame?: (slotId?: string) => boolean;
+  onLoadGame?: (slotId?: string) => boolean;
+  onDeleteSave?: (slotId: string) => void;
+  onNewGame?: () => void;
 }
 
 // Story panel component - shows current narrative and recent history
@@ -139,6 +147,11 @@ export function GameScreen({
   onFireBandmate,
   onHireManager,
   onFireManager,
+  saveSlots = [],
+  onSaveGame,
+  onLoadGame,
+  onDeleteSave,
+  onNewGame,
 }: GameScreenProps) {
   const { player, bandName, week, year, weekLogs, bandmates, newsItems, manager, upcomingGig, songs, albums } = gameState;
   const activeBandmates = bandmates.filter(b => b.status === 'active');
@@ -146,6 +159,10 @@ export function GameScreen({
   // Track if we're currently revealing the week's events
   const [isRevealing, setIsRevealing] = useState(false);
   const [lastRevealedWeek, setLastRevealedWeek] = useState(0);
+
+  // Menu state
+  const [showMenu, setShowMenu] = useState(false);
+  const [saveLoadMode, setSaveLoadMode] = useState<'save' | 'load' | null>(null);
 
   // Start revealing when we have new content for a new week
   useEffect(() => {
@@ -171,7 +188,45 @@ export function GameScreen({
         <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-700 p-3">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-lg font-bold text-red-500">{bandName || 'FAILING UP'}</h1>
-            <span className="text-xs text-gray-500">Y{year} W{((week - 1) % 52) + 1}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Y{year} W{((week - 1) % 52) + 1}</span>
+              {/* Menu button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                  </svg>
+                </button>
+                {/* Dropdown menu */}
+                {showMenu && (
+                  <div className="absolute right-0 mt-1 w-36 bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden z-20">
+                    <button
+                      onClick={() => { setSaveLoadMode('save'); setShowMenu(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                    >
+                      Save Game
+                    </button>
+                    <button
+                      onClick={() => { setSaveLoadMode('load'); setShowMenu(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                    >
+                      Load Game
+                    </button>
+                    {onNewGame && (
+                      <button
+                        onClick={() => { onNewGame(); setShowMenu(false); }}
+                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700 transition-colors border-t border-gray-700"
+                      >
+                        New Game
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <CompactStats player={player} />
         </div>
@@ -302,6 +357,32 @@ export function GameScreen({
 
             {/* Stats & Band Panel */}
             <div className="space-y-4">
+              {/* Game Menu (desktop) */}
+              <div className="bg-gray-900 border border-gray-700 rounded-lg p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => setSaveLoadMode('save')}
+                    className="flex-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm rounded transition-colors"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setSaveLoadMode('load')}
+                    className="flex-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm rounded transition-colors"
+                  >
+                    Load
+                  </button>
+                  {onNewGame && (
+                    <button
+                      onClick={onNewGame}
+                      className="px-3 py-1.5 bg-gray-800 hover:bg-red-900/50 text-gray-400 hover:text-red-400 text-sm rounded transition-colors"
+                    >
+                      New
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Key Stats */}
               <KeyStats
                 player={player}
@@ -353,6 +434,30 @@ export function GameScreen({
         gameState={gameState}
         onSelectAction={onSelectAction}
       />
+
+      {/* Save/Load Modal */}
+      {saveLoadMode && onSaveGame && onLoadGame && onDeleteSave && (
+        <SaveLoadModal
+          isOpen={true}
+          mode={saveLoadMode}
+          saveSlots={saveSlots}
+          currentBandName={bandName}
+          currentWeek={week}
+          currentYear={year}
+          onSave={onSaveGame}
+          onLoad={onLoadGame}
+          onDelete={onDeleteSave}
+          onClose={() => setSaveLoadMode(null)}
+        />
+      )}
+
+      {/* Click outside to close menu */}
+      {showMenu && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => setShowMenu(false)}
+        />
+      )}
     </>
   );
 }

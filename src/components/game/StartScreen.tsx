@@ -8,13 +8,15 @@ import { createRandom, generateSeed } from '@/engine/random';
 
 interface StartScreenProps {
   onStart: (playerName: string, bandName: string, difficulty: Difficulty, talentLevel: TalentLevel, preferredStyle: MusicStyle) => void;
+  hasSavedGame?: boolean;
+  onContinue?: () => void;
 }
 
 const difficulties = getAvailableDifficulties();
 const talentLevels = getAvailableTalentLevels();
 const musicStyles = getAvailableStyles();
 
-export function StartScreen({ onStart }: StartScreenProps) {
+export function StartScreen({ onStart, hasSavedGame, onContinue }: StartScreenProps) {
   const [playerName, setPlayerName] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [talentLevel, setTalentLevel] = useState<TalentLevel>('average');
@@ -61,6 +63,19 @@ export function StartScreen({ onStart }: StartScreenProps) {
             True superstardom? That's for the lucky few who survive."
           </p>
         </div>
+
+        {/* Continue Button - show if there's a saved game */}
+        {hasSavedGame && onContinue && (
+          <div className="mb-6">
+            <button
+              onClick={onContinue}
+              className="w-full py-4 bg-green-600 hover:bg-green-500 text-white text-xl font-bold rounded-lg transition-colors mb-3"
+            >
+              Continue Saved Game
+            </button>
+            <div className="text-gray-500 text-sm">or start a new journey below</div>
+          </div>
+        )}
 
         {/* Start Form */}
         <form onSubmit={handleSubmit} className="space-y-5">

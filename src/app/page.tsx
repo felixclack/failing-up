@@ -64,6 +64,12 @@ export default function Home() {
     pendingSupportSlotOffer,
     acceptSupportSlot,
     declineSupportSlot,
+    // Save/Load
+    saveSlots,
+    hasSavedGame,
+    saveGame,
+    loadGame,
+    deleteSave,
   } = useGame();
 
   // Not started - show start screen
@@ -73,6 +79,8 @@ export default function Home() {
         onStart={(playerName, bandName, difficulty, talentLevel, preferredStyle) =>
           startGame({ playerName, bandName, difficulty, talentLevel, preferredStyle })
         }
+        hasSavedGame={hasSavedGame}
+        onContinue={() => loadGame()}
       />
     );
   }
@@ -101,6 +109,11 @@ export default function Home() {
         onFireBandmate={handleFireBandmate}
         onHireManager={openManagerHiring}
         onFireManager={handleFireManager}
+        saveSlots={saveSlots}
+        onSaveGame={saveGame}
+        onLoadGame={loadGame}
+        onDeleteSave={deleteSave}
+        onNewGame={newGame}
       />
 
       {/* Gig Notification Modal - show when manager books a gig */}
