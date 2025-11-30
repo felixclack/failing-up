@@ -426,6 +426,219 @@ const gigEvents: GameEvent[] = [
     ],
     oneTime: true,
   },
+  {
+    id: 'EV_ENCORE_DEMAND',
+    triggerConditions: { hadGigThisWeek: true, minHype: 25 },
+    weight: 3,
+    textIntro: 'The crowd won\'t stop chanting. They\'re stamping their feet, demanding more. You\'ve already played your whole set.',
+    choices: [
+      {
+        id: 'PLAY_COVER',
+        label: 'Play a classic cover',
+        outcomeText: 'You launch into a crowd-pleasing cover. Everyone sings along. Perfect ending.',
+        statChanges: { hype: 5, fans: 10, image: 2 },
+      },
+      {
+        id: 'REPEAT_BEST',
+        label: 'Repeat your best song',
+        outcomeText: 'You play your biggest tune again. The crowd goes mental. No one minds hearing it twice.',
+        statChanges: { hype: 3, fans: 5 },
+      },
+      {
+        id: 'LEAVE_WANTING',
+        label: 'Leave them wanting more',
+        outcomeText: 'You wave and exit. The mystique builds. Sometimes less is more.',
+        statChanges: { cred: 3, image: 3 },
+      },
+    ],
+  },
+  {
+    id: 'EV_EQUIPMENT_THEFT',
+    triggerConditions: { hadGigThisWeek: true },
+    weight: 1,
+    textIntro: 'After the gig, you discover someone\'s nicked your pedal board from backstage. Hundreds of pounds of gear, gone.',
+    choices: [
+      {
+        id: 'BLAME_VENUE',
+        label: 'Confront the venue',
+        outcomeText: 'You kick off at the promoter. They\'re apologetic but claim no responsibility. You burn a bridge.',
+        statChanges: { money: 150, industryGoodwill: -5, stability: -3 },
+      },
+      {
+        id: 'SOCIAL_APPEAL',
+        label: 'Appeal on social media',
+        outcomeText: 'You post about the theft. Fans share it everywhere. A week later, someone spots your gear at a pawn shop.',
+        statChanges: { followers: 50, hype: 2 },
+      },
+      {
+        id: 'WRITE_IT_OFF',
+        label: 'Accept the loss',
+        outcomeText: 'It stings, but you move on. You\'ll replace it when you can afford to.',
+        statChanges: { money: -200, stability: -2 },
+      },
+    ],
+  },
+  {
+    id: 'EV_BACKSTAGE_DRAMA',
+    triggerConditions: { hadGigThisWeek: true, minBandmates: 1 },
+    weight: 2,
+    textIntro: 'Backstage after the show, tensions boil over. Your bandmate is furious about being too low in the mix.',
+    choices: [
+      {
+        id: 'APOLOGISE',
+        label: 'Apologise and promise better',
+        outcomeText: 'You smooth things over. They calm down, but there\'s still an edge.',
+        statChanges: { stability: 2 },
+        bandmateChanges: { loyalty: 3 },
+      },
+      {
+        id: 'STAND_GROUND',
+        label: 'Tell them to deal with it',
+        outcomeText: 'You\'re the frontperson. You make the calls. They sulk but drop it.',
+        statChanges: { cred: 2 },
+        bandmateChanges: { loyalty: -5 },
+      },
+      {
+        id: 'TURN_IT_AROUND',
+        label: 'Blame the sound engineer',
+        outcomeText: 'You deflect to the venue\'s dodgy mixing desk. United against a common enemy.',
+        statChanges: { industryGoodwill: -2 },
+        bandmateChanges: { loyalty: 2 },
+      },
+    ],
+  },
+  {
+    id: 'EV_FANS_BACKSTAGE',
+    triggerConditions: { hadGigThisWeek: true, minFans: 500 },
+    weight: 2,
+    textIntro: 'A group of fans have blagged their way backstage. They\'re starstruck and want photos, autographs, your time.',
+    choices: [
+      {
+        id: 'GIVE_TIME',
+        label: 'Spend time with them',
+        outcomeText: 'You chat, take photos, sign stuff. They\'ll remember this forever. So will you.',
+        statChanges: { coreFans: 20, image: 3, health: -2 },
+      },
+      {
+        id: 'QUICK_HELLO',
+        label: 'Quick hello and done',
+        outcomeText: 'You\'re friendly but brief. They get their photo. Everyone\'s happy enough.',
+        statChanges: { fans: 5, image: 1 },
+      },
+      {
+        id: 'SEND_AWAY',
+        label: 'Have security move them on',
+        outcomeText: 'You need your space. They look gutted as they\'re escorted out.',
+        statChanges: { cred: 2, image: -3, stability: 2 },
+      },
+    ],
+  },
+  {
+    id: 'EV_VENUE_WANTS_MORE',
+    triggerConditions: { hadGigThisWeek: true, minHype: 20 },
+    weight: 2,
+    textIntro: 'The venue promoter catches you after the show. "That was brilliant. Want a residency? Same night, every month."',
+    choices: [
+      {
+        id: 'ACCEPT_RESIDENCY',
+        label: 'Accept the residency',
+        outcomeText: 'Guaranteed gigs and a growing local following. Smart move.',
+        statChanges: { industryGoodwill: 5, stability: 5, coreFans: 15 },
+        flagsSet: ['hasResidency'],
+      },
+      {
+        id: 'NEGOTIATE_BETTER',
+        label: 'Ask for better terms',
+        outcomeText: 'You push for more money per show. They agree - you\'ve got leverage now.',
+        statChanges: { industryGoodwill: 2, money: 100 },
+      },
+      {
+        id: 'STAY_FREE',
+        label: 'Keep your options open',
+        outcomeText: 'You don\'t want to be tied down. The promoter understands, but looks disappointed.',
+        statChanges: { cred: 2, industryGoodwill: -1 },
+      },
+    ],
+    oneTime: true,
+  },
+  {
+    id: 'EV_FIGHT_BREAKS_OUT',
+    triggerConditions: { hadGigThisWeek: true },
+    weight: 1,
+    textIntro: 'Mid-set, a fight erupts in the crowd. Fists flying, drinks everywhere. The bouncers are wading in.',
+    choices: [
+      {
+        id: 'STOP_PLAYING',
+        label: 'Stop and call it out',
+        outcomeText: 'You halt the music and tell them to pack it in. The fighters look embarrassed. Order restored.',
+        statChanges: { cred: 3, image: 2 },
+      },
+      {
+        id: 'PLAY_LOUDER',
+        label: 'Crank it up and play through',
+        outcomeText: 'The show must go on. You blast through the chaos. Most of the crowd stays focused on you.',
+        statChanges: { hype: 3, skill: 1 },
+      },
+      {
+        id: 'DIVE_IN',
+        label: 'Jump in and break it up',
+        outcomeText: 'You leap off stage into the melee. Somehow you don\'t get punched. Legendary move.',
+        statChanges: { image: 8, hype: 5, health: -5, cred: 5 },
+      },
+    ],
+  },
+  {
+    id: 'EV_PROMOTER_STIFFS',
+    triggerConditions: { hadGigThisWeek: true },
+    weight: 2,
+    textIntro: 'The promoter\'s doing a runner. They\'re claiming the door take was less than expected and they can\'t pay what they promised.',
+    choices: [
+      {
+        id: 'THREATEN',
+        label: 'Get in their face',
+        outcomeText: 'You make it clear this isn\'t acceptable. They nervously hand over most of what\'s owed.',
+        statChanges: { money: 80, industryGoodwill: -3, image: 2 },
+      },
+      {
+        id: 'NEGOTIATE',
+        label: 'Negotiate calmly',
+        outcomeText: 'You work out a compromise. Half now, half next time. Better than nothing.',
+        statChanges: { money: 40, industryGoodwill: 1 },
+      },
+      {
+        id: 'WALK_AWAY',
+        label: 'Walk away and blacklist them',
+        outcomeText: 'You tell every band you know to avoid this venue. Word spreads fast.',
+        statChanges: { cred: 3, industryGoodwill: 2 },
+      },
+    ],
+  },
+  {
+    id: 'EV_PHOTOGRAPHER_OFFER',
+    triggerConditions: { hadGigThisWeek: true, minFans: 200 },
+    weight: 2,
+    textIntro: 'A photographer approaches after the show. "Got some great shots tonight. Want to buy the set for your socials?"',
+    choices: [
+      {
+        id: 'BUY_PHOTOS',
+        label: 'Buy the photo set (£50)',
+        outcomeText: 'Professional photos of you looking like actual rock stars. Worth every penny.',
+        statChanges: { money: -50, image: 5, followers: 30 },
+      },
+      {
+        id: 'NEGOTIATE_CREDIT',
+        label: 'Offer exposure instead',
+        outcomeText: 'They roll their eyes but agree to a few shots for credit. Photographers hate this.',
+        statChanges: { image: 2, followers: 10 },
+      },
+      {
+        id: 'DECLINE_POLITELY',
+        label: 'Pass on it',
+        outcomeText: 'You\'re skint. Phone photos will have to do.',
+        statChanges: {},
+      },
+    ],
+  },
 ];
 
 // =============================================================================
