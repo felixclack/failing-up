@@ -327,4 +327,374 @@ export const bandEvents: GameEvent[] = [
       },
     ],
   },
+
+  // ===== Creative Differences =====
+
+  // Bandmate writes a song you hate
+  {
+    id: 'EV_HATE_THEIR_SONG',
+    triggerConditions: {
+      minBandmates: 1,
+    },
+    weight: 2,
+    requiredAction: 'WRITE',
+    textIntro: 'Your guitarist brings in a new song. It\'s... not good. But they\'re really proud of it.',
+    choices: [
+      {
+        id: 'BE_HONEST',
+        label: 'Be honest',
+        outcomeText: 'You tell them it needs work. They\'re hurt, but they respect your honesty eventually.',
+        statChanges: { cred: 2 },
+        bandmateChanges: { loyalty: -3 },
+      },
+      {
+        id: 'FAKE_ENTHUSIASM',
+        label: 'Fake enthusiasm',
+        outcomeText: 'You pretend to love it. Now you\'re stuck playing it at every show.',
+        statChanges: { cred: -2 },
+        bandmateChanges: { loyalty: 3 },
+      },
+      {
+        id: 'WORKSHOP_IT',
+        label: 'Suggest improvements',
+        outcomeText: 'You work on it together. By the end, it\'s actually decent. Their idea, your polish.',
+        statChanges: { skill: 2 },
+        bandmateChanges: { loyalty: 2 },
+      },
+    ],
+  },
+
+  // Direction disagreement
+  {
+    id: 'EV_MUSICAL_DIRECTION',
+    triggerConditions: {
+      minBandmates: 2,
+      minFans: 1000,
+    },
+    weight: 2,
+    textIntro: 'The band can\'t agree on what direction to go next. Half want to experiment. Half want to stick with what works.',
+    choices: [
+      {
+        id: 'EXPERIMENT',
+        label: 'Push for evolution',
+        outcomeText: 'You take creative risks. Some old fans leave. New ones arrive. Art should be uncomfortable.',
+        statChanges: { cred: 5, fans: -50, coreFans: 30 },
+        bandmateChanges: { loyalty: 2 },
+      },
+      {
+        id: 'PLAY_SAFE',
+        label: 'Stick with the formula',
+        outcomeText: 'You give the fans what they want. The purists are happy. It feels a bit hollow.',
+        statChanges: { cred: -3, fans: 50, stability: 3 },
+      },
+      {
+        id: 'SPLIT_DIFFERENCE',
+        label: 'One experimental, one safe',
+        outcomeText: 'You\'ll record both types of songs. See what sticks. It\'s a compromise but it works.',
+        statChanges: { cred: 1, skill: 1, stability: 2 },
+        bandmateChanges: { loyalty: 1 },
+      },
+    ],
+  },
+
+  // Producer disagrees with band
+  {
+    id: 'EV_PRODUCER_FIGHT',
+    triggerConditions: {
+      minBandmates: 1,
+      inStudio: true,
+    },
+    weight: 2,
+    textIntro: 'The producer wants to change your sound. Your bandmates are split - half love it, half think he\'s ruining the record.',
+    choices: [
+      {
+        id: 'TRUST_PRODUCER',
+        label: 'Trust the producer',
+        outcomeText: 'You defer to experience. The result is polished but doesn\'t quite sound like you.',
+        statChanges: { skill: 1, cred: -2, hype: 3 },
+        bandmateChanges: { loyalty: -2 },
+      },
+      {
+        id: 'FIGHT_FOR_VISION',
+        label: 'Fight for your vision',
+        outcomeText: 'You push back hard. The producer respects you more. The record sounds exactly like you intended.',
+        statChanges: { cred: 4, industryGoodwill: -2 },
+        bandmateChanges: { loyalty: 3 },
+      },
+      {
+        id: 'FIRE_PRODUCER',
+        label: 'Fire the producer',
+        outcomeText: 'Drastic but necessary. You lose the deposit but gain your integrity.',
+        statChanges: { money: -1000, cred: 5, industryGoodwill: -5 },
+        bandmateChanges: { loyalty: 2 },
+      },
+    ],
+  },
+
+  // ===== Band Relationships =====
+
+  // Band members dating
+  {
+    id: 'EV_BANDMATES_DATING',
+    triggerConditions: {
+      minBandmates: 2,
+    },
+    weight: 1,
+    textIntro: 'You notice your guitarist and bassist have been very... close lately. They\'re dating. This could get messy.',
+    choices: [
+      {
+        id: 'STAY_OUT',
+        label: 'Stay out of it',
+        outcomeText: 'Not your business. It\'s cute, actually. For now.',
+        statChanges: { stability: 2 },
+        bandmateChanges: { loyalty: 1 },
+      },
+      {
+        id: 'SET_BOUNDARIES',
+        label: 'Set professional boundaries',
+        outcomeText: 'You have a mature conversation about keeping band and romance separate. They appreciate it.',
+        statChanges: { stability: 5 },
+      },
+      {
+        id: 'WORRY_OPENLY',
+        label: 'Express concern',
+        outcomeText: 'You warn them about mixing business and pleasure. They think you\'re overreacting.',
+        statChanges: { stability: -2 },
+        bandmateChanges: { loyalty: -3 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Band members break up
+  {
+    id: 'EV_BANDMATES_BREAKUP',
+    triggerConditions: {
+      minBandmates: 2,
+      hasFlag: 'bandmatesDating',
+    },
+    weight: 3,
+    textIntro: 'The guitarist and bassist have broken up. Practice is unbearable. They can\'t even look at each other.',
+    choices: [
+      {
+        id: 'MEDIATE',
+        label: 'Mediate between them',
+        outcomeText: 'You spend hours being a therapist instead of a musician. Eventually they agree to be professional.',
+        statChanges: { stability: -5, burnout: 5 },
+        bandmateChanges: { loyalty: 3 },
+      },
+      {
+        id: 'PICK_A_SIDE',
+        label: 'Pick a side',
+        outcomeText: 'You back one of them. The other feels betrayed. This might not end well.',
+        statChanges: { stability: -8 },
+        bandmateChanges: { loyalty: -5 },
+      },
+      {
+        id: 'GIVE_SPACE',
+        label: 'Take a break from rehearsals',
+        outcomeText: 'Everyone needs time. You cancel practice for a few weeks. Tensions cool slightly.',
+        statChanges: { skill: -2, stability: 3 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Ego clash
+  {
+    id: 'EV_EGO_CLASH',
+    triggerConditions: {
+      minBandmates: 1,
+      minHype: 30,
+    },
+    weight: 2,
+    textIntro: 'A journalist wants to interview just you, not the band. Your bandmates are annoyed. "It\'s not a solo project."',
+    choices: [
+      {
+        id: 'DO_INTERVIEW_SOLO',
+        label: 'Do the interview anyway',
+        outcomeText: 'You take the spotlight. The article is great for your profile, less great for band unity.',
+        statChanges: { hype: 8, image: 5 },
+        bandmateChanges: { loyalty: -8 },
+      },
+      {
+        id: 'INSIST_ON_BAND',
+        label: 'Insist they interview the band',
+        outcomeText: 'You tell the journalist it\'s all of us or none. They agree. Your bandmates appreciate it.',
+        statChanges: { hype: 5 },
+        bandmateChanges: { loyalty: 5 },
+      },
+      {
+        id: 'DECLINE_INTERVIEW',
+        label: 'Decline entirely',
+        outcomeText: 'You turn it down to avoid drama. The journalist moves on. Peace preserved.',
+        statChanges: { cred: 2 },
+        bandmateChanges: { loyalty: 2 },
+      },
+    ],
+  },
+
+  // Money dispute
+  {
+    id: 'EV_MONEY_DISPUTE',
+    triggerConditions: {
+      minBandmates: 1,
+      minMoney: 2000,
+    },
+    weight: 2,
+    textIntro: 'The gig money\'s come in and there\'s disagreement about splits. Your drummer thinks they deserve more.',
+    choices: [
+      {
+        id: 'EQUAL_SPLIT',
+        label: 'Equal splits, non-negotiable',
+        outcomeText: 'You stand firm on equal shares. The drummer accepts it but there\'s resentment.',
+        statChanges: { stability: -2 },
+        bandmateChanges: { loyalty: -3 },
+      },
+      {
+        id: 'NEGOTIATE',
+        label: 'Hear their case',
+        outcomeText: 'They do drive the van and load the most gear. You agree to a small bump.',
+        statChanges: { money: -100 },
+        bandmateChanges: { loyalty: 5 },
+      },
+      {
+        id: 'SONGWRITING_SPLIT',
+        label: 'Move to songwriting splits',
+        outcomeText: 'You propose that songwriters get a bigger cut. Fair in theory, contentious in practice.',
+        statChanges: { cred: 2 },
+        bandmateChanges: { loyalty: -2 },
+      },
+    ],
+  },
+
+  // ===== Band Growth =====
+
+  // Bandmate improves dramatically
+  {
+    id: 'EV_BANDMATE_IMPROVEMENT',
+    triggerConditions: {
+      minBandmates: 1,
+      minWeek: 10,
+    },
+    weight: 2,
+    textIntro: 'Your bassist has been practising like mad. They\'ve gone from adequate to genuinely impressive.',
+    choices: [
+      {
+        id: 'CELEBRATE_GROWTH',
+        label: 'Celebrate their growth',
+        outcomeText: 'You praise them publicly. Their confidence soars. The band sounds better than ever.',
+        statChanges: { skill: 3, stability: 3 },
+        bandmateChanges: { loyalty: 5 },
+      },
+      {
+        id: 'RAISE_YOUR_GAME',
+        label: 'Feel inspired to improve',
+        outcomeText: 'Their dedication motivates you. You both push each other to be better.',
+        statChanges: { skill: 4 },
+        bandmateChanges: { loyalty: 2 },
+      },
+      {
+        id: 'FEEL_INSECURE',
+        label: 'Feel threatened',
+        outcomeText: 'Are they getting better than you? The thought nags at you.',
+        statChanges: { stability: -5, burnout: 3 },
+      },
+    ],
+  },
+
+  // Bandmate personal crisis
+  {
+    id: 'EV_BANDMATE_CRISIS',
+    triggerConditions: {
+      minBandmates: 1,
+    },
+    weight: 1,
+    textIntro: 'Your guitarist\'s parent is seriously ill. They\'re struggling to focus and considering leaving temporarily.',
+    choices: [
+      {
+        id: 'FULL_SUPPORT',
+        label: 'Give them full support',
+        outcomeText: 'You tell them family comes first. Take whatever time they need. You\'ll manage.',
+        statChanges: { stability: -3, hype: -3 },
+        bandmateChanges: { loyalty: 10 },
+      },
+      {
+        id: 'FIND_DEP',
+        label: 'Arrange a dep player',
+        outcomeText: 'You hire someone to cover shows. Professional but your guitarist feels replaced.',
+        statChanges: { money: -300 },
+        bandmateChanges: { loyalty: -2 },
+      },
+      {
+        id: 'CANCEL_COMMITMENTS',
+        label: 'Cancel upcoming shows',
+        outcomeText: 'You prioritize your friend over the schedule. The promoters understand.',
+        statChanges: { money: -200, industryGoodwill: 2 },
+        bandmateChanges: { loyalty: 8 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Band joke becomes inside joke
+  {
+    id: 'EV_INSIDE_JOKE',
+    triggerConditions: {
+      minBandmates: 1,
+      minStability: 40,
+    },
+    weight: 2,
+    textIntro: 'Something stupid happens at practice. You\'re all crying with laughter. It becomes a running joke.',
+    choices: [
+      {
+        id: 'CHERISH_MOMENT',
+        label: 'Cherish the moment',
+        outcomeText: 'These are the moments that make the struggle worth it. You\'re a family, not just a band.',
+        statChanges: { stability: 5, burnout: -3 },
+        bandmateChanges: { loyalty: 3 },
+      },
+      {
+        id: 'SHARE_WITH_FANS',
+        label: 'Share it with fans',
+        outcomeText: 'You post the story online. Fans love seeing the human side of the band.',
+        statChanges: { coreFans: 15, followers: 20 },
+        bandmateChanges: { loyalty: 2 },
+      },
+    ],
+  },
+
+  // Band anniversary
+  {
+    id: 'EV_BAND_ANNIVERSARY',
+    triggerConditions: {
+      minBandmates: 1,
+      minWeek: 52,
+    },
+    weight: 1,
+    textIntro: 'It\'s been a year since the band formed. You\'ve survived this long. That\'s more than most.',
+    choices: [
+      {
+        id: 'COMMEMORATE',
+        label: 'Throw an anniversary show',
+        outcomeText: 'You play a special gig marking the occasion. Fans who\'ve been there from the start show up.',
+        statChanges: { coreFans: 30, stability: 5, money: 300 },
+        bandmateChanges: { loyalty: 5 },
+      },
+      {
+        id: 'REFLECT_PRIVATELY',
+        label: 'Reflect privately',
+        outcomeText: 'You share a quiet drink together. No fanfare, just gratitude.',
+        statChanges: { stability: 8, burnout: -5 },
+        bandmateChanges: { loyalty: 3 },
+      },
+      {
+        id: 'LOOK_FORWARD',
+        label: 'Focus on the future',
+        outcomeText: 'No time for nostalgia. Year two starts now. Bigger goals ahead.',
+        statChanges: { hype: 3 },
+      },
+    ],
+    oneTime: true,
+  },
 ];
