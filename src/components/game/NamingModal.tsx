@@ -13,14 +13,32 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
   const [customName, setCustomName] = useState('');
   const [useCustom, setUseCustom] = useState(false);
 
-  // Don't render for studio selection - that's handled separately
-  if (pending.type === 'studio-selection') {
+  // Don't render for studio or song selection - those are handled separately
+  if (pending.type === 'studio-selection' || pending.type === 'song-selection') {
     return null;
   }
 
   const isSong = pending.type === 'song';
-  const typeLabel = isSong ? 'Song' : 'Album';
-  const icon = isSong ? '🎵' : '💿';
+
+  // Determine the proper label based on the type
+  let typeLabel = 'Song';
+  let icon = '🎵';
+
+  if (pending.type === 'single') {
+    typeLabel = 'Single';
+    icon = '🎵';
+  } else if (pending.type === 'album') {
+    if (pending.recordAction === 'RECORD_EP') {
+      typeLabel = 'EP';
+      icon = '💿';
+    } else {
+      typeLabel = 'Album';
+      icon = '📀';
+    }
+  } else if (pending.type === 'song') {
+    typeLabel = 'Song';
+    icon = '🎵';
+  }
 
   const handleConfirm = () => {
     if (useCustom && customName.trim()) {
@@ -45,12 +63,17 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
           <div className="text-xs text-yellow-400 uppercase tracking-wide mb-2">
             Name Your {typeLabel}
           </div>
-          {isSong && pending.type === 'song' && (
+          {pending.type === 'song' && (
             <p className="text-gray-400 text-sm">
               Quality: {getQualityLabel(pending.song.quality)} • Style: {pending.song.style}
             </p>
           )}
-          {!isSong && pending.type === 'album' && (
+          {pending.type === 'single' && (
+            <p className="text-gray-400 text-sm">
+              {pending.songIds.length} track
+            </p>
+          )}
+          {pending.type === 'album' && (
             <p className="text-gray-400 text-sm">
               {pending.songIds.length} tracks
             </p>
@@ -121,7 +144,7 @@ export function NamingModal({ pending, onConfirm, onCancel }: NamingModalProps) 
             className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600
                        disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
           >
-            {isSong ? 'Save Song' : 'Record Album'}
+            {isSong ? 'Save Song' : `Record ${typeLabel}`}
           </button>
         </div>
       </div>

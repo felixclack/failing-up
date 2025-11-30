@@ -7,6 +7,7 @@ import { EndingScreen } from '@/components/game/EndingScreen';
 import { EventModal, EventOutcome } from '@/components/game/EventModal';
 import { NamingModal } from '@/components/game/NamingModal';
 import { StudioSelectionModal } from '@/components/game/StudioSelectionModal';
+import { SongSelectionModal } from '@/components/game/SongSelectionModal';
 import { TemptationModal, TemptationOutcome } from '@/components/game/TemptationModal';
 import { GigOutcomeModal } from '@/components/game/GigOutcomeModal';
 import { GigNotificationModal } from '@/components/game/GigNotificationModal';
@@ -35,6 +36,7 @@ export default function Home() {
     handleTemptationChoice,
     dismissTemptationOutcome,
     pendingNaming,
+    selectSongsForRecording,
     selectStudio,
     confirmNaming,
     cancelNaming,
@@ -162,7 +164,17 @@ export default function Home() {
         />
       )}
 
-      {/* Studio Selection Modal - show when player starts recording */}
+      {/* Song Selection Modal - show when player starts recording to pick songs */}
+      {pendingNaming && pendingNaming.type === 'song-selection' && (
+        <SongSelectionModal
+          songs={gameState.songs.filter(s => !s.isReleased)}
+          recordAction={pendingNaming.recordAction}
+          onConfirm={selectSongsForRecording}
+          onCancel={cancelNaming}
+        />
+      )}
+
+      {/* Studio Selection Modal - show after song selection */}
       {pendingNaming && pendingNaming.type === 'studio-selection' && (
         <StudioSelectionModal
           pending={pendingNaming}
@@ -173,7 +185,7 @@ export default function Home() {
       )}
 
       {/* Naming Modal - show when player writes a song or records an album */}
-      {pendingNaming && pendingNaming.type !== 'studio-selection' && (
+      {pendingNaming && pendingNaming.type !== 'studio-selection' && pendingNaming.type !== 'song-selection' && (
         <NamingModal
           pending={pendingNaming}
           onConfirm={confirmNaming}

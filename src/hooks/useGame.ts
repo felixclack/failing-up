@@ -85,6 +85,7 @@ export interface UseGameReturn {
   restartGame: () => void;
   newGame: () => void;
   handleFireBandmate: (bandmateId: string) => void;
+  selectSongsForRecording: (selectedSongIds: string[]) => void;
   selectStudio: (studioQuality: StudioQuality) => void;
   confirmNaming: (customName: string | null) => void;
   cancelNaming: () => void;
@@ -269,19 +270,11 @@ export function useGame(): UseGameReturn {
       return;
     }
 
-    // Handle all RECORD actions - show studio selection first
+    // Handle all RECORD actions - show song selection first
     if (actionId === 'RECORD_SINGLE' || actionId === 'RECORD_EP' || actionId === 'RECORD_ALBUM') {
-      const unreleasedSongs = gameState.songs.filter(s => !s.isReleased);
-      const songCount = actionId === 'RECORD_SINGLE' ? 1
-        : actionId === 'RECORD_EP' ? 4 : 8;
-      if (unreleasedSongs.length < songCount) return;
-
-      const songIds = unreleasedSongs.slice(0, songCount).map(s => s.id);
-
-      // Show studio selection modal first
+      // Show song selection modal first
       setPendingNaming({
-        type: 'studio-selection',
-        songIds,
+        type: 'song-selection',
         recordAction: actionId,
       });
       return;
@@ -750,6 +743,18 @@ export function useGame(): UseGameReturn {
     setGameState(newState);
   }, [gameState]);
 
+  // Song selection handler - after selecting songs, move to studio selection
+  const selectSongsForRecording = useCallback((selectedSongIds: string[]) => {
+    if (!pendingNaming || pendingNaming.type !== 'song-selection' || !gameState) return;
+
+    // Move to studio selection with selected songs
+    setPendingNaming({
+      type: 'studio-selection',
+      songIds: selectedSongIds,
+      recordAction: pendingNaming.recordAction,
+    });
+  }, [pendingNaming, gameState]);
+
   // Studio selection handler
   const selectStudio = useCallback((studioQuality: StudioQuality) => {
     if (!pendingNaming || pendingNaming.type !== 'studio-selection' || !gameState) return;
@@ -766,8 +771,10 @@ export function useGame(): UseGameReturn {
         studioQuality,
       });
     } else {
+      // For EP and Album, type should reflect what we're recording
+      const namingType = pendingNaming.recordAction === 'RECORD_EP' ? 'ep' : 'album';
       setPendingNaming({
-        type: 'album',
+        type: 'album',  // The union type, but we'll pass the specific type in the object
         songIds: pendingNaming.songIds,
         generatedTitle,
         recordAction: pendingNaming.recordAction,
@@ -779,8 +786,9 @@ export function useGame(): UseGameReturn {
   // Naming flow handlers
   const confirmNaming = useCallback((customName: string | null) => {
     if (!pendingNaming || !gameState) return;
-    // Studio selection is handled separately
+    // Song and studio selection are handled separately
     if (pendingNaming.type === 'studio-selection') return;
+    if (pendingNaming.type === 'song-selection') return;
 
     const finalName = customName || pendingNaming.generatedTitle;
 
@@ -1001,6 +1009,7 @@ export function useGame(): UseGameReturn {
     restartGame,
     newGame,
     handleFireBandmate,
+    selectSongsForRecording,
     selectStudio,
     confirmNaming,
     cancelNaming,

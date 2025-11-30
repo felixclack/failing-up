@@ -118,11 +118,11 @@ export const ACTIONS: Record<ActionId, Action> = {
   RECORD_EP: {
     id: 'RECORD_EP',
     label: 'Record EP',
-    description: 'Book studio time for a short release. Takes 2 weeks. Need at least 4 songs.',
+    description: 'Book studio time for a short release. Takes 2 weeks. Need at least 3 songs.',
     requirements: {
       onTour: false,
       noActiveRecording: true,
-      minUnreleasedSongs: 4,
+      minUnreleasedSongs: 3,
     },
     baseEffects: {
       skill: 1,

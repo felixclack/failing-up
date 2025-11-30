@@ -689,7 +689,13 @@ export interface PendingStudioSelection {
   recordAction: 'RECORD_SINGLE' | 'RECORD_EP' | 'RECORD_ALBUM';
 }
 
-export type PendingNaming = PendingSongNaming | PendingSingleNaming | PendingAlbumNaming | PendingStudioSelection;
+// Song selection flow (shown first when starting a recording)
+export interface PendingSongSelection {
+  type: 'song-selection';
+  recordAction: 'RECORD_SINGLE' | 'RECORD_EP' | 'RECORD_ALBUM';
+}
+
+export type PendingNaming = PendingSongNaming | PendingSingleNaming | PendingAlbumNaming | PendingStudioSelection | PendingSongSelection;
 
 // =============================================================================
 // Endings
