@@ -173,6 +173,248 @@ export const labelEvents: GameEvent[] = [
     ],
   },
 
+  // ===== Sign the deal follow-ups =====
+
+  // Sign with indie label
+  {
+    id: 'EV_SIGN_INDIE_DEAL',
+    triggerConditions: {
+      hasLabelDeal: false,
+      hasFlag: 'indieLabelInterested',
+    },
+    weight: 3,
+    textIntro: 'The indie label sends over a contract. Simple terms: £2,000 advance, 50/50 split on profits, they handle distribution.',
+    choices: [
+      {
+        id: 'SIGN_INDIE',
+        label: 'Sign the deal',
+        outcomeText: 'You sign on the dotted line. It\'s not life-changing money, but you\'ve got a real label behind you now.',
+        statChanges: { money: 2000, industryGoodwill: 5, stability: 5 },
+        flagsSet: ['hasLabelDeal', 'indieDeal'],
+        flagsClear: ['indieLabelInterested'],
+      },
+      {
+        id: 'NEGOTIATE_INDIE',
+        label: 'Try to negotiate',
+        outcomeText: 'You push for better terms. They come back with 60/40 in your favour but drop the advance to £1,500.',
+        statChanges: { money: 1500, industryGoodwill: 3, cred: 2 },
+        flagsSet: ['hasLabelDeal', 'indieDeal'],
+        flagsClear: ['indieLabelInterested'],
+      },
+      {
+        id: 'WALK_AWAY_INDIE',
+        label: 'Walk away',
+        outcomeText: 'You\'re not ready to give up control. They\'re disappointed but understand.',
+        statChanges: { cred: 3 },
+        flagsClear: ['indieLabelInterested'],
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Sign with mid-tier label
+  {
+    id: 'EV_SIGN_MID_DEAL',
+    triggerConditions: {
+      hasLabelDeal: false,
+      hasFlag: 'midLabelInterested',
+    },
+    weight: 3,
+    textIntro: 'The mid-size label sends a formal offer: £15,000 advance, 2-album deal, tour support, but they want 360 rights.',
+    choices: [
+      {
+        id: 'SIGN_MID',
+        label: 'Sign the deal',
+        outcomeText: 'You sign. The advance hits your account. You\'re playing in a bigger league now.',
+        statChanges: { money: 15000, industryGoodwill: 8, hype: 5 },
+        flagsSet: ['hasLabelDeal', 'midTierDeal'],
+        flagsClear: ['midLabelInterested'],
+      },
+      {
+        id: 'NEGOTIATE_MID',
+        label: 'Negotiate the 360 clause',
+        outcomeText: 'Your lawyer fights the merch and touring cuts. They agree to label-only rights, but drop the advance to £10,000.',
+        statChanges: { money: 10000, industryGoodwill: 5, cred: 3 },
+        flagsSet: ['hasLabelDeal', 'midTierDeal'],
+        flagsClear: ['midLabelInterested'],
+      },
+      {
+        id: 'WALK_AWAY_MID',
+        label: 'Pass on it',
+        outcomeText: 'Something feels off. You trust your gut and walk away.',
+        statChanges: { cred: 2 },
+        flagsClear: ['midLabelInterested'],
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Sign with major label
+  {
+    id: 'EV_SIGN_MAJOR_DEAL',
+    triggerConditions: {
+      hasLabelDeal: false,
+      hasFlag: 'majorLabelInterested',
+    },
+    weight: 3,
+    textIntro: 'The major label offer arrives: £100,000 advance, 3-album deal, full marketing support. But the recoupment terms are brutal.',
+    choices: [
+      {
+        id: 'SIGN_MAJOR',
+        label: 'Sign with the major',
+        outcomeText: 'You sign your life away. The money\'s real, the support\'s real, but so is the debt.',
+        statChanges: { money: 100000, industryGoodwill: 15, hype: 15, cred: -5 },
+        flagsSet: ['hasLabelDeal', 'majorDeal'],
+        flagsClear: ['majorLabelInterested'],
+      },
+      {
+        id: 'NEGOTIATE_MAJOR',
+        label: 'Hire a top lawyer',
+        outcomeText: 'You spend £5,000 on a music industry lawyer. They get you key-man clauses and better royalty rates.',
+        statChanges: { money: 95000, industryGoodwill: 10, hype: 10, cred: 3 },
+        flagsSet: ['hasLabelDeal', 'majorDeal'],
+        flagsClear: ['majorLabelInterested'],
+      },
+      {
+        id: 'WALK_MAJOR',
+        label: 'Stay independent',
+        outcomeText: 'You turn down a major label deal. Some call you crazy. Others call you a legend.',
+        statChanges: { cred: 15, industryGoodwill: -10 },
+        flagsClear: ['majorLabelInterested'],
+      },
+    ],
+    oneTime: true,
+  },
+
+  // ===== More label relationship events =====
+
+  // Label wants image change
+  {
+    id: 'EV_LABEL_IMAGE_CHANGE',
+    triggerConditions: {
+      hasLabelDeal: true,
+      minWeek: 10,
+    },
+    weight: 2,
+    textIntro: 'The label\'s marketing team wants to "refine your image." They\'re talking stylists, photographers, a whole rebrand.',
+    choices: [
+      {
+        id: 'ACCEPT_REBRAND',
+        label: 'Go along with it',
+        outcomeText: 'You emerge looking like a proper pop star. Your old fans barely recognize you.',
+        statChanges: { image: 15, cred: -8, followers: 100, coreFans: -30 },
+      },
+      {
+        id: 'PARTIAL_REBRAND',
+        label: 'Compromise on key points',
+        outcomeText: 'You keep the essence but polish the edges. New photos that still feel like you.',
+        statChanges: { image: 5, cred: -2, followers: 40 },
+      },
+      {
+        id: 'REFUSE_REBRAND',
+        label: 'Refuse completely',
+        outcomeText: 'You tell them you are who you are. Things get tense at the label.',
+        statChanges: { cred: 5, industryGoodwill: -5 },
+      },
+    ],
+  },
+
+  // Label shelves your album
+  {
+    id: 'EV_ALBUM_SHELVED',
+    triggerConditions: {
+      hasLabelDeal: true,
+      hasFlag: 'majorDeal',
+      maxHype: 25,
+    },
+    weight: 1,
+    textIntro: 'Devastating news: the label is shelving your finished album. "The market isn\'t right." Your work sits in a vault.',
+    choices: [
+      {
+        id: 'ACCEPT_SHELVING',
+        label: 'Accept it',
+        outcomeText: 'You swallow your pride. Maybe next time. The frustration eats at you.',
+        statChanges: { stability: -15, burnout: 10, industryGoodwill: 2 },
+      },
+      {
+        id: 'LEAK_IT',
+        label: 'Leak it yourself',
+        outcomeText: 'The album appears online "mysteriously." Fans love it. The label is furious.',
+        statChanges: { cred: 10, hype: 10, industryGoodwill: -20, fans: 200 },
+      },
+      {
+        id: 'BUY_IT_BACK',
+        label: 'Try to buy back the masters',
+        outcomeText: 'They want £50,000. It\'s extortion, but it\'s your music.',
+        statChanges: { money: -50000, cred: 5 },
+      },
+    ],
+    oneTime: true,
+  },
+
+  // Label celebrates success
+  {
+    id: 'EV_LABEL_SUCCESS',
+    triggerConditions: {
+      hasLabelDeal: true,
+      minFans: 15000,
+      minHype: 40,
+    },
+    weight: 2,
+    textIntro: 'The label throws a party in your honour. "You\'re our priority act now." Champagne flows.',
+    choices: [
+      {
+        id: 'ENJOY_PARTY',
+        label: 'Enjoy the attention',
+        outcomeText: 'You soak it up. Photos with execs, promises of bigger budgets. This is what you dreamed of.',
+        statChanges: { addiction: 3, industryGoodwill: 5, stability: 5 },
+      },
+      {
+        id: 'STAY_GROUNDED',
+        label: 'Stay grounded',
+        outcomeText: 'You smile and network but keep your head. Success is fleeting in this industry.',
+        statChanges: { cred: 3, stability: 5, industryGoodwill: 3 },
+      },
+      {
+        id: 'PUSH_FOR_MORE',
+        label: 'Use the leverage',
+        outcomeText: 'You corner an exec about renegotiating. They\'re impressed by your business sense.',
+        statChanges: { money: 5000, industryGoodwill: 2 },
+      },
+    ],
+  },
+
+  // A&R person leaves
+  {
+    id: 'EV_AR_LEAVES',
+    triggerConditions: {
+      hasLabelDeal: true,
+    },
+    weight: 1,
+    textIntro: 'Your A&R - the one who signed you, who believed in you - is leaving the label. You\'re losing your champion.',
+    choices: [
+      {
+        id: 'KEEP_IN_TOUCH',
+        label: 'Stay in touch with them',
+        outcomeText: 'You exchange numbers. Industry relationships matter. They might sign you again someday.',
+        statChanges: { industryGoodwill: 3 },
+      },
+      {
+        id: 'SCHMOOZE_NEW',
+        label: 'Schmooze the replacement',
+        outcomeText: 'You take the new A&R out for drinks. Gotta start building that relationship from scratch.',
+        statChanges: { money: -50, industryGoodwill: 2, stability: -2 },
+      },
+      {
+        id: 'WORRY_ABOUT_FUTURE',
+        label: 'Worry about your position',
+        outcomeText: 'Without your champion, you\'re vulnerable. The new regime might not share their vision.',
+        statChanges: { stability: -8, burnout: 3 },
+      },
+    ],
+    oneTime: true,
+  },
+
   // Recoupment milestone
   {
     id: 'EV_RECOUPED',
