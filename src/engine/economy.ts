@@ -516,6 +516,8 @@ export function createAlbum(
     salesTier,
     labelId,
     weekReleased: state.week,
+    chartHistory: [],
+    peakChartPosition: null,
   };
 
   // Calculate fan gain based on reception and sales tier

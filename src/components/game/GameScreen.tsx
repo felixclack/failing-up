@@ -7,6 +7,7 @@ import { KeyStats, CompactStats } from './KeyStats';
 import { WeekFeed } from './WeekFeed';
 import { ActionModal } from './ActionModal';
 import { ManagerPanel } from './ManagerPanel';
+import { StreamingStatsPanel, CompactStreamingStats } from './StreamingStatsPanel';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -139,7 +140,7 @@ export function GameScreen({
   onHireManager,
   onFireManager,
 }: GameScreenProps) {
-  const { player, bandName, week, year, weekLogs, bandmates, newsItems, manager, upcomingGig } = gameState;
+  const { player, bandName, week, year, weekLogs, bandmates, newsItems, manager, upcomingGig, songs, albums } = gameState;
   const activeBandmates = bandmates.filter(b => b.status === 'active');
 
   // Track if we're currently revealing the week's events
@@ -209,6 +210,20 @@ export function GameScreen({
               />
             </div>
           </CollapsibleSection>
+
+          {/* Streaming & Charts */}
+          {songs.filter(s => s.isReleased).length > 0 && (
+            <CollapsibleSection title="📈 Streaming & Charts" defaultOpen={false}>
+              <div className="p-3">
+                <StreamingStatsPanel
+                  player={player}
+                  songs={songs}
+                  albums={albums}
+                  currentWeek={week}
+                />
+              </div>
+            </CollapsibleSection>
+          )}
 
           {/* Manager */}
           <CollapsibleSection
@@ -294,6 +309,16 @@ export function GameScreen({
                 year={year}
                 bandName={bandName}
               />
+
+              {/* Streaming & Charts - show when player has released music */}
+              {songs.filter(s => s.isReleased).length > 0 && (
+                <StreamingStatsPanel
+                  player={player}
+                  songs={songs}
+                  albums={albums}
+                  currentWeek={week}
+                />
+              )}
 
               {/* Manager Panel */}
               <ManagerPanel

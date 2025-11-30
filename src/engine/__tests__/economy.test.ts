@@ -15,9 +15,35 @@ import {
   LABEL_TIERS,
   SALES_TIER_DATA,
 } from '../economy';
+import { createDefaultPlatformStats } from '../streaming';
 import { createGameState } from '../state';
 import { createRandom } from '../random';
 import { LabelDeal, Song, Album } from '../types';
+
+// Helper to create test song with all required fields
+function createTestSong(overrides: Partial<Song> = {}): Song {
+  return {
+    id: '1',
+    title: 'Test Song',
+    quality: 60,
+    style: 'rock' as any,
+    hitPotential: 50,
+    writtenByPlayer: true,
+    weekWritten: 1,
+    isReleased: false,
+    isSingle: false,
+    weekReleased: null,
+    streamsTier: 'none',
+    playlistScore: 0,
+    viralFlag: false,
+    viralWeeksRemaining: 0,
+    totalStreams: 0,
+    platformStats: createDefaultPlatformStats(),
+    chartHistory: [],
+    peakChartPosition: null,
+    ...overrides,
+  };
+}
 
 // Helper to create a complete modern LabelDeal for testing
 function createTestDeal(overrides: Partial<LabelDeal> = {}): LabelDeal {
@@ -150,6 +176,8 @@ describe('economy', () => {
         salesTier: 'gold',
         labelId: 'deal1',
         weekReleased: 10,
+        chartHistory: [],
+        peakChartPosition: null,
       }];
 
       const royalties = calculateWeeklyRoyalties(state);
@@ -165,8 +193,8 @@ describe('economy', () => {
 
     it('calculates quality from song average plus production', () => {
       const songs: Song[] = [
-        { id: '1', title: 'Song 1', quality: 60, style: 'rock' as any, hitPotential: 50, writtenByPlayer: true, weekWritten: 1, isReleased: false, isSingle: false, weekReleased: null, streamsTier: 'none', playlistScore: 0, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 0 },
-        { id: '2', title: 'Song 2', quality: 80, style: 'rock' as any, hitPotential: 60, writtenByPlayer: true, weekWritten: 2, isReleased: false, isSingle: false, weekReleased: null, streamsTier: 'none', playlistScore: 0, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 0 },
+        createTestSong({ id: '1', title: 'Song 1', quality: 60, hitPotential: 50, weekWritten: 1 }),
+        createTestSong({ id: '2', title: 'Song 2', quality: 80, hitPotential: 60, weekWritten: 2 }),
       ];
 
       // Average quality = 70, production 50 = +10 bonus
@@ -177,7 +205,7 @@ describe('economy', () => {
 
     it('caps quality at 100', () => {
       const songs: Song[] = [
-        { id: '1', title: 'Song 1', quality: 95, style: 'rock' as any, hitPotential: 90, writtenByPlayer: true, weekWritten: 1, isReleased: false, isSingle: false, weekReleased: null, streamsTier: 'none', playlistScore: 0, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 0 },
+        createTestSong({ id: '1', title: 'Song 1', quality: 95, hitPotential: 90, weekWritten: 1 }),
       ];
 
       const quality = calculateAlbumQuality(songs, 100);
@@ -243,8 +271,8 @@ describe('economy', () => {
     it('creates album with calculated values', () => {
       const state = createGameState({ playerName: 'Test', seed: 1 });
       state.songs = [
-        { id: 's1', title: 'Song 1', quality: 70, style: 'rock' as any, hitPotential: 60, writtenByPlayer: true, weekWritten: 1, isReleased: false, isSingle: false, weekReleased: null, streamsTier: 'none', playlistScore: 0, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 0 },
-        { id: 's2', title: 'Song 2', quality: 65, style: 'rock' as any, hitPotential: 55, writtenByPlayer: true, weekWritten: 2, isReleased: false, isSingle: false, weekReleased: null, streamsTier: 'none', playlistScore: 0, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 0 },
+        createTestSong({ id: 's1', title: 'Song 1', quality: 70, hitPotential: 60, weekWritten: 1 }),
+        createTestSong({ id: 's2', title: 'Song 2', quality: 65, hitPotential: 55, weekWritten: 2 }),
       ];
       state.player.hype = 50;
       state.player.cred = 40;

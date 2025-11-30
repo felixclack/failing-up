@@ -17,6 +17,7 @@ import {
 import { createRandom, generateSeed, RandomGenerator } from './random';
 import { getDifficultySettings, getWeeklyLivingCost } from './difficulty';
 import { generateStartingRivals } from './rivals';
+import { createDefaultPlayerPlatformStats } from './streaming';
 
 // =============================================================================
 // Constants
@@ -211,6 +212,7 @@ export function createPlayer(
     industryGoodwill: rng.nextInt(STARTING_STATS.industryGoodwill.min, STARTING_STATS.industryGoodwill.max),
     burnout: rng.nextInt(STARTING_STATS.burnout.min, STARTING_STATS.burnout.max),
     flags: createDefaultFlags(),
+    platforms: createDefaultPlayerPlatformStats(),
   };
 }
 

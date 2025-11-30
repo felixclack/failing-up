@@ -14,6 +14,7 @@ import {
 import { applyStatDeltas, clampStat, getTotalFans } from './state';
 import { createRandom, RandomGenerator } from './random';
 import { getGigPayout, getFanGain } from './difficulty';
+import { getDefaultSongStreamingFields } from './streaming';
 
 // =============================================================================
 // Action Definitions
@@ -423,11 +424,7 @@ function executeWrite(state: GameState, rng: RandomGenerator): ActionResult {
       isReleased: false,
       isSingle: false,
       weekReleased: null,
-      streamsTier: 'none',
-      playlistScore: 0,
-      viralFlag: false,
-      viralWeeksRemaining: 0,
-      totalStreams: 0,
+      ...getDefaultSongStreamingFields(),
     };
 
     return {

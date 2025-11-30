@@ -26,6 +26,7 @@ import {
   getHealthLoss,
   getBurnoutGain,
 } from './difficulty';
+import { getDefaultSongStreamingFields } from './streaming';
 import {
   checkAndActivateArcs,
   checkAndAdvanceArcs,
@@ -355,11 +356,7 @@ export function processTurn(
         isReleased: false,
         isSingle: false,
         weekReleased: null,
-        streamsTier: 'none',
-        playlistScore: 0,
-        viralFlag: false,
-        viralWeeksRemaining: 0,
-        totalStreams: 0,
+        ...getDefaultSongStreamingFields(),
       };
       newState = {
         ...newState,
@@ -480,11 +477,7 @@ export function processTurnWithEvents(
         isReleased: false,
         isSingle: false,
         weekReleased: null,
-        streamsTier: 'none',
-        playlistScore: 0,
-        viralFlag: false,
-        viralWeeksRemaining: 0,
-        totalStreams: 0,
+        ...getDefaultSongStreamingFields(),
       };
       newState = {
         ...newState,

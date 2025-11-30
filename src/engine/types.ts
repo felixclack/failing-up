@@ -139,6 +139,9 @@ export interface Player {
   algoBoost: number;       // 0-100, how much platforms currently "like" you
   cataloguePower: number;  // 0-100, strength of back-catalog on streaming
 
+  // Platform-specific presence
+  platforms: PlayerPlatformStats;
+
   // Hidden/semi-hidden stats
   addiction: number;       // Substance abuse progression
   industryGoodwill: number; // Label/promoter relations
@@ -240,6 +243,63 @@ export interface Song {
   viralFlag: boolean;           // Temporary viral boost active
   viralWeeksRemaining: number;  // Weeks of viral boost left
   totalStreams: number;         // Lifetime stream count
+
+  // Platform-specific stats
+  platformStats: PlatformStats;
+
+  // Chart history
+  chartHistory: ChartEntry[];   // Historical chart positions
+  peakChartPosition: number | null; // Best chart position achieved
+}
+
+// Platform-specific streaming/engagement stats
+export interface PlatformStats {
+  spotify: {
+    streams: number;
+    monthlyListeners: number;
+    playlistAdds: number;      // Number of playlist placements
+  };
+  youtube: {
+    views: number;
+    subscribers: number;       // Channel subs gained from this song
+    likes: number;
+  };
+  tiktok: {
+    videos: number;            // Videos using this sound
+    views: number;             // Total views on TikTok videos
+    trending: boolean;         // Currently trending on TikTok
+  };
+}
+
+// Chart entry for tracking positions
+export interface ChartEntry {
+  week: number;
+  position: number;            // 1-100 (or null if not charting)
+  chartType: ChartType;
+}
+
+export type ChartType = 'uk_singles' | 'uk_albums' | 'us_billboard' | 'global_viral';
+
+// Player's overall platform presence (aggregated across all songs)
+export interface PlayerPlatformStats {
+  spotify: {
+    monthlyListeners: number;
+    followers: number;
+    totalStreams: number;
+  };
+  youtube: {
+    subscribers: number;
+    totalViews: number;
+    channelLikes: number;
+  };
+  tiktok: {
+    followers: number;
+    totalVideos: number;     // Total videos using their sounds
+    viralSounds: number;     // Number of sounds that went viral
+  };
+  instagram: {
+    followers: number;
+  };
 }
 
 export interface Album {
@@ -252,6 +312,9 @@ export interface Album {
   salesTier: SalesTier | null;
   labelId: string | null;
   weekReleased: number | null;
+  // Chart tracking
+  chartHistory: ChartEntry[];
+  peakChartPosition: number | null;
 }
 
 export interface LabelDeal {

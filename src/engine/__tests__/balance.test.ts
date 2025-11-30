@@ -8,6 +8,8 @@ import { createRandom } from '../random';
 import {
   calculateWeeklyStreamingIncome,
   releaseSingle,
+  createDefaultPlatformStats,
+  createDefaultPlayerPlatformStats,
   MONEY_PER_1000_STREAMS,
   STREAMS_PER_TIER,
 } from '../streaming';
@@ -42,6 +44,7 @@ describe('Balance Analysis', () => {
       addiction: 0,
       industryGoodwill: 30,
       burnout: 20,
+      platforms: createDefaultPlayerPlatformStats(),
       flags: {
         hasLabelDeal: false,
         onTour: false,
@@ -71,6 +74,9 @@ describe('Balance Analysis', () => {
       viralFlag: false,
       viralWeeksRemaining: 0,
       totalStreams: 10000,
+      platformStats: createDefaultPlatformStats(),
+      chartHistory: [],
+      peakChartPosition: null,
       ...overrides,
     });
 
@@ -158,6 +164,9 @@ describe('Balance Analysis', () => {
         viralFlag: false,
         viralWeeksRemaining: 0,
         totalStreams: 500,
+        platformStats: createDefaultPlatformStats(),
+        chartHistory: [],
+        peakChartPosition: null,
       }];
 
       const { income: streamingIncome } = calculateWeeklyStreamingIncome(songs, player, rng);
@@ -183,13 +192,16 @@ describe('Balance Analysis', () => {
       const songs = [
         { id: 'song1', title: 'Hit 1', quality: 70, style: 'alt' as const, hitPotential: 65,
           writtenByPlayer: true, weekWritten: 10, isReleased: true, isSingle: true, weekReleased: 12,
-          streamsTier: 'medium' as const, playlistScore: 50, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 50000 },
+          streamsTier: 'medium' as const, playlistScore: 50, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 50000,
+          platformStats: createDefaultPlatformStats(), chartHistory: [], peakChartPosition: null },
         { id: 'song2', title: 'Hit 2', quality: 65, style: 'alt' as const, hitPotential: 60,
           writtenByPlayer: true, weekWritten: 20, isReleased: true, isSingle: true, weekReleased: 22,
-          streamsTier: 'medium' as const, playlistScore: 45, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 30000 },
+          streamsTier: 'medium' as const, playlistScore: 45, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 30000,
+          platformStats: createDefaultPlatformStats(), chartHistory: [], peakChartPosition: null },
         { id: 'song3', title: 'Deep Cut', quality: 55, style: 'alt' as const, hitPotential: 40,
           writtenByPlayer: true, weekWritten: 30, isReleased: true, isSingle: false, weekReleased: 32,
-          streamsTier: 'low' as const, playlistScore: 25, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 5000 },
+          streamsTier: 'low' as const, playlistScore: 25, viralFlag: false, viralWeeksRemaining: 0, totalStreams: 5000,
+          platformStats: createDefaultPlatformStats(), chartHistory: [], peakChartPosition: null },
       ];
 
       const { income: streamingIncome } = calculateWeeklyStreamingIncome(songs, player, rng);
@@ -379,6 +391,7 @@ describe('Balance Analysis', () => {
         addiction: 0,
         industryGoodwill: 30,
         burnout: 30,
+        platforms: createDefaultPlayerPlatformStats(),
         flags: {
           hasLabelDeal: false,
           onTour: false,
@@ -407,6 +420,9 @@ describe('Balance Analysis', () => {
         viralFlag: false,
         viralWeeksRemaining: 0,
         totalStreams: 20000 + i * 10000,
+        platformStats: createDefaultPlatformStats(),
+        chartHistory: [],
+        peakChartPosition: null,
       }));
 
       const { income } = calculateWeeklyStreamingIncome(songs, player, rng);

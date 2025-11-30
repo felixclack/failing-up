@@ -182,6 +182,8 @@ describe('endings', () => {
         salesTier: 'platinum',
         labelId: null,
         weekReleased: 50,
+        chartHistory: [],
+        peakChartPosition: null,
       }];
 
       const result = getEndingResult(state);

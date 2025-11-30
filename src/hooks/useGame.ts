@@ -13,6 +13,7 @@ import { applyStatDeltas, getTotalFans, weekToYear } from '@/engine/state';
 import { ALL_EVENTS } from '@/data/events';
 import { ALL_TEMPTATIONS, canTemptationTrigger } from '@/data/temptations';
 import { generateManagerCandidates, hireManager, fireManager, tryGenerateSupportSlotOffer, acceptSupportSlotOffer, declineSupportSlotOffer, clearExpiredOffers } from '@/engine/manager';
+import { getDefaultSongStreamingFields } from '@/engine/streaming';
 
 // Studio options with cost and quality tradeoffs
 export const STUDIO_OPTIONS: StudioOption[] = [
@@ -343,11 +344,7 @@ export function useGame(): UseGameReturn {
             isReleased: false,
             isSingle: false,
             weekReleased: null,
-            streamsTier: 'none',
-            playlistScore: 0,
-            viralFlag: false,
-            viralWeeksRemaining: 0,
-            totalStreams: 0,
+            ...getDefaultSongStreamingFields(),
           };
 
           newSongs.push(song);
@@ -369,6 +366,8 @@ export function useGame(): UseGameReturn {
           salesTier: null,
           labelId: gameState.labelDeals.find(d => d.status === 'active')?.id || null,
           weekReleased: null,  // Not released yet - needs RELEASE action
+          chartHistory: [],
+          peakChartPosition: null,
         };
 
         const newState: GameState = {
@@ -1014,6 +1013,8 @@ export function useGame(): UseGameReturn {
         salesTier: null,
         labelId: gameState.labelDeals.find(d => d.status === 'active')?.id || null,
         weekReleased: null,  // Not released yet - needs RELEASE action
+        chartHistory: [],
+        peakChartPosition: null,
       };
 
       const studioCost = studioOption.costPerWeek;

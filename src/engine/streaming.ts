@@ -8,6 +8,9 @@ import {
   Song,
   StreamsTier,
   Player,
+  PlatformStats,
+  PlayerPlatformStats,
+  ChartEntry,
 } from './types';
 import { RandomGenerator } from './random';
 import { getTotalFans } from './state';
@@ -41,6 +44,95 @@ export const PLAYLIST_THRESHOLDS = {
 
 // AlgoBoost decay per week
 export const ALGO_BOOST_DECAY = 3;
+
+// =============================================================================
+// Default Values / Helpers
+// =============================================================================
+
+/**
+ * Create default platform stats for a new song
+ */
+export function createDefaultPlatformStats(): PlatformStats {
+  return {
+    spotify: {
+      streams: 0,
+      monthlyListeners: 0,
+      playlistAdds: 0,
+    },
+    youtube: {
+      views: 0,
+      subscribers: 0,
+      likes: 0,
+    },
+    tiktok: {
+      videos: 0,
+      views: 0,
+      trending: false,
+    },
+  };
+}
+
+/**
+ * Get default streaming fields for a new song
+ */
+export function getDefaultSongStreamingFields() {
+  return {
+    streamsTier: 'none' as const,
+    playlistScore: 0,
+    viralFlag: false,
+    viralWeeksRemaining: 0,
+    totalStreams: 0,
+    platformStats: createDefaultPlatformStats(),
+    chartHistory: [] as ChartEntry[],
+    peakChartPosition: null as number | null,
+  };
+}
+
+/**
+ * Create default player platform stats
+ */
+export function createDefaultPlayerPlatformStats(): PlayerPlatformStats {
+  return {
+    spotify: {
+      monthlyListeners: 0,
+      followers: 0,
+      totalStreams: 0,
+    },
+    youtube: {
+      subscribers: 0,
+      totalViews: 0,
+      channelLikes: 0,
+    },
+    tiktok: {
+      followers: 0,
+      totalVideos: 0,
+      viralSounds: 0,
+    },
+    instagram: {
+      followers: 0,
+    },
+  };
+}
+
+/**
+ * Get default album chart fields
+ */
+export function getDefaultAlbumChartFields() {
+  return {
+    chartHistory: [] as ChartEntry[],
+    peakChartPosition: null as number | null,
+  };
+}
+
+/**
+ * Format large numbers for display (e.g., 1.2M, 500K)
+ */
+export function formatNumber(num: number): string {
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
+}
 
 // =============================================================================
 // Streaming Tier Calculations

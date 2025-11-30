@@ -12,6 +12,7 @@ import {
   applyAlgoBoostDecay,
   updateCataloguePower,
   updateCasualListenersFromStreaming,
+  createDefaultPlatformStats,
   STREAMS_PER_TIER,
   VIRAL_DURATION_WEEKS,
   ALGO_BOOST_DECAY,
@@ -38,6 +39,9 @@ function createTestSong(overrides: Partial<Song> = {}): Song {
     viralFlag: false,
     viralWeeksRemaining: 0,
     totalStreams: 0,
+    platformStats: createDefaultPlatformStats(),
+    chartHistory: [],
+    peakChartPosition: null,
     ...overrides,
   };
 }
