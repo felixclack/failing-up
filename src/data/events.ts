@@ -642,6 +642,225 @@ const gigEvents: GameEvent[] = [
 ];
 
 // =============================================================================
+// Tour Events
+// =============================================================================
+
+const tourEvents: GameEvent[] = [
+  {
+    id: 'EV_VAN_BREAKDOWN',
+    triggerConditions: { onTour: true },
+    weight: 3,
+    textIntro: 'The van\'s made a horrible noise and died on the hard shoulder of the M1. You\'ve got a gig in four hours.',
+    choices: [
+      {
+        id: 'CALL_RECOVERY',
+        label: 'Call breakdown recovery',
+        outcomeText: 'Three hours and £200 later, you\'re back on the road. You make the gig with minutes to spare.',
+        statChanges: { money: -200, stability: -3, health: -2 },
+      },
+      {
+        id: 'HITCHHIKE',
+        label: 'Thumb a lift with the gear',
+        outcomeText: 'A lorry driver takes pity on you. You arrive smelling of diesel but the show goes on.',
+        statChanges: { cred: 3, image: -2, health: -3 },
+      },
+      {
+        id: 'CANCEL_GIG',
+        label: 'Cancel the gig',
+        outcomeText: 'You can\'t make it. The promoter is furious. Word spreads that you\'re unreliable.',
+        statChanges: { industryGoodwill: -8, hype: -5, stability: -5 },
+      },
+    ],
+  },
+  {
+    id: 'EV_GREEN_ROOM_DRAMA',
+    triggerConditions: { onTour: true, minBandmates: 1 },
+    weight: 2,
+    textIntro: 'The green room is tiny and freezing. Your bandmate is having a proper meltdown about the rider being wrong.',
+    choices: [
+      {
+        id: 'CALM_THEM',
+        label: 'Talk them down',
+        outcomeText: 'You remind them why you\'re doing this. They take a breath. Crisis averted.',
+        statChanges: { stability: 3 },
+        bandmateChanges: { loyalty: 5 },
+      },
+      {
+        id: 'JOIN_COMPLAINT',
+        label: 'Join in complaining',
+        outcomeText: 'You\'re both right - this is rubbish. You bond over shared misery.',
+        statChanges: { industryGoodwill: -2 },
+        bandmateChanges: { loyalty: 3 },
+      },
+      {
+        id: 'TELL_OFF',
+        label: 'Tell them to grow up',
+        outcomeText: 'You\'re all tired. You snap at them. The silence afterwards is deafening.',
+        statChanges: { stability: -2 },
+        bandmateChanges: { loyalty: -8, reliability: -3 },
+      },
+    ],
+  },
+  {
+    id: 'EV_TOUR_FATIGUE',
+    triggerConditions: { onTour: true, minWeek: 3 },
+    weight: 3,
+    textIntro: 'Another Travelodge. Another service station meal. You can\'t remember what day it is or which city you\'re in.',
+    choices: [
+      {
+        id: 'PUSH_THROUGH',
+        label: 'Push through it',
+        outcomeText: 'You dig deep. The tiredness becomes part of the performance. Raw and real.',
+        statChanges: { health: -5, burnout: 8, cred: 3, skill: 2 },
+      },
+      {
+        id: 'TAKE_BREAK',
+        label: 'Take a proper break day',
+        outcomeText: 'You spend a whole day doing nothing. Feels indulgent but necessary.',
+        statChanges: { health: 5, burnout: -10, stability: 5 },
+      },
+      {
+        id: 'PARTY_HARDER',
+        label: 'Self-medicate through it',
+        outcomeText: 'If you can\'t feel rested, at least you can feel something else.',
+        statChanges: { health: -3, addiction: 8, burnout: -3, image: 3 },
+      },
+    ],
+  },
+  {
+    id: 'EV_LOCAL_RADIO',
+    triggerConditions: { onTour: true, minFans: 300 },
+    weight: 2,
+    textIntro: 'A local radio station wants you to come in for a morning show interview before tonight\'s gig.',
+    choices: [
+      {
+        id: 'DO_INTERVIEW',
+        label: 'Get up early and do it',
+        outcomeText: 'You\'re groggy but charming. The DJ loves you. Listeners are intrigued.',
+        statChanges: { health: -2, hype: 5, followers: 40, fans: 25 },
+      },
+      {
+        id: 'PHONE_IN',
+        label: 'Ask to do it by phone',
+        outcomeText: 'They agree reluctantly. It\'s fine but lacks energy.',
+        statChanges: { hype: 2, followers: 15 },
+      },
+      {
+        id: 'SLEEP_IN',
+        label: 'Prioritize rest',
+        outcomeText: 'You need sleep more than promo. The station is annoyed but you\'ll play better tonight.',
+        statChanges: { health: 3, industryGoodwill: -2 },
+      },
+    ],
+  },
+  {
+    id: 'EV_TOUR_ROMANCE',
+    triggerConditions: { onTour: true },
+    weight: 1,
+    textIntro: 'Someone catches your eye after the show. There\'s definite chemistry. They\'re hinting at coming back to the bus.',
+    choices: [
+      {
+        id: 'INVITE_BACK',
+        label: 'See where it goes',
+        outcomeText: 'A night to remember. Or not remember, depending on your perspective.',
+        statChanges: { stability: -3, health: -2, image: 3, hype: 2 },
+      },
+      {
+        id: 'GET_NUMBER',
+        label: 'Get their number for later',
+        outcomeText: 'You swap details. Maybe something, maybe nothing. Nice to be wanted though.',
+        statChanges: { stability: 2 },
+      },
+      {
+        id: 'FOCUS_ON_MUSIC',
+        label: 'Stay focused',
+        outcomeText: 'You\'re here to work. You politely decline. Back to the van.',
+        statChanges: { cred: 2, skill: 1 },
+      },
+    ],
+  },
+  {
+    id: 'EV_SUPPORT_DRAMA',
+    triggerConditions: { onTour: true },
+    weight: 2,
+    textIntro: 'The support band are being absolute nightmares. They went over their set time and used your backline without asking.',
+    choices: [
+      {
+        id: 'CONFRONT',
+        label: 'Have it out with them',
+        outcomeText: 'You set them straight. They apologize, but there\'s tension for the rest of the tour.',
+        statChanges: { cred: 3, stability: -2 },
+      },
+      {
+        id: 'LET_SLIDE',
+        label: 'Let it slide this time',
+        outcomeText: 'You\'re the bigger band, you can be gracious. They know they owe you one.',
+        statChanges: { industryGoodwill: 3, stability: 2 },
+      },
+      {
+        id: 'SABOTAGE',
+        label: 'Mess with their gear tomorrow',
+        outcomeText: 'Petty? Yes. Satisfying? Also yes. They sound awful the next night.',
+        statChanges: { cred: -2, image: 2, stability: 3 },
+      },
+    ],
+  },
+  {
+    id: 'EV_HOMESICK',
+    triggerConditions: { onTour: true, minWeek: 4 },
+    weight: 2,
+    textIntro: 'You miss home. Your own bed. Familiar faces. The tour feels endless.',
+    choices: [
+      {
+        id: 'CALL_HOME',
+        label: 'Have a long call with someone',
+        outcomeText: 'Hearing a friendly voice helps. You feel reconnected to your real life.',
+        statChanges: { stability: 8, burnout: -5 },
+      },
+      {
+        id: 'BURY_IT',
+        label: 'Bury the feeling',
+        outcomeText: 'This is the life you chose. You focus on the music and push it down.',
+        statChanges: { burnout: 5, skill: 2 },
+      },
+      {
+        id: 'WRITE_ABOUT_IT',
+        label: 'Write about the feeling',
+        outcomeText: 'You channel the loneliness into lyrics. Some of your best work.',
+        statChanges: { stability: 3, talent: 2 },
+      },
+    ],
+  },
+  {
+    id: 'EV_VENUE_UPGRADE',
+    triggerConditions: { onTour: true, minHype: 30 },
+    weight: 1,
+    textIntro: 'The promoter calls - the original venue is sold out. They want to move you to somewhere bigger.',
+    choices: [
+      {
+        id: 'MOVE_UP',
+        label: 'Take the bigger venue',
+        outcomeText: 'You upgrade to a 500-cap room. The pressure\'s on but the buzz is real.',
+        statChanges: { hype: 8, fans: 50, money: 200, stability: -3 },
+      },
+      {
+        id: 'STAY_SMALL',
+        label: 'Keep the intimate show',
+        outcomeText: 'You stick with the original venue. The packed crowd creates an electric atmosphere.',
+        statChanges: { cred: 5, coreFans: 20 },
+      },
+      {
+        id: 'ADD_SECOND_SHOW',
+        label: 'Do both - add a matinee',
+        outcomeText: 'Two shows in one day. Exhausting but you reach twice the audience.',
+        statChanges: { fans: 80, money: 150, health: -5, burnout: 5 },
+      },
+    ],
+    oneTime: true,
+  },
+];
+
+// =============================================================================
 // Scene & Social Events
 // =============================================================================
 
@@ -738,6 +957,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...moneyEvents,
   ...healthEvents,
   ...gigEvents,
+  ...tourEvents,
   ...sceneEvents,
   ...labelEvents,
   ...bandEvents,
